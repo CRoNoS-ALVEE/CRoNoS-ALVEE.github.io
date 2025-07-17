@@ -1,81 +1,108 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Bot, BookOpen, History, ExternalLink, FileText, Send, Zap } from "lucide-react"
+import { Bot, Plus, Mic, Paperclip, Send, MessageSquare, Stethoscope, Menu, X } from "lucide-react"
 import Navbar from "../components/Navbar/Navbar"
 import styles from "./chatbot.module.css"
-import {useRouter} from "next/navigation";
-import axios from "axios";
+import { useRouter } from "next/navigation"
+import axios from "axios"
 
 interface Message {
   text: string
   isUser: boolean
+  timestamp: Date
+}
+
+interface Conversation {
+  id: string
+  title: string
+  lastMessage: string
+  timestamp: Date
 }
 
 export default function ChatbotPage() {
-
-  /*
-   This is a Login function
- */
-
-  const router = useRouter();
+  const router = useRouter()
 
   interface User {
-    profile_pic?: string;
-    name?: string;
+    profile_pic?: string
+    name?: string
   }
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token")
       if (!token) {
-        setLoggedIn(false);
-        setLoading(false);
-        return;
+        setLoggedIn(false)
+        setLoading(false)
+        return
       }
       try {
         const userId = localStorage.getItem("id")
         const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
-          headers: {Authorization: `Bearer ${token}`},
-        });
-        setUser(response.data);
-        setLoggedIn(true);
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setUser(response.data)
+        setLoggedIn(true)
       } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        setError("Failed to fetch user data.");
-        setLoggedIn(false);
+        console.error("Failed to fetch user data:", err)
+        setError("Failed to fetch user data.")
+        setLoggedIn(false)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchUserData();
-  }, [router]);
+    fetchUserData()
+  }, [router])
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      setUser(null);
-      setLoggedIn(false);
-      router.push("/auth");
+      localStorage.removeItem("token")
+      setUser(null)
+      setLoggedIn(false)
+      router.push("/auth")
     }
-  };
+  }
 
-  const [messages, setMessages] = useState<Message[]>([
+  const [conversations, setConversations] = useState<Conversation[]>([
     {
-      text: "Hello! I'm your AI health assistant powered by advanced medical knowledge. How can I help you today?",
-      isUser: false,
+      id: "1",
+      title: "Headache and Fever Symptoms",
+      lastMessage: "Based on your symptoms, I recommend...",
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
     },
+    {
+      id: "2", 
+      title: "Chest Pain Consultation",
+      lastMessage: "Let me help you understand your chest pain...",
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    },
+    {
+      id: "3",
+      title: "Skin Rash Analysis",
+      lastMessage: "Can you describe the appearance of the rash?",
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: "4",
+      title: "Sleep Disorder Discussion",
+      lastMessage: "Sleep disorders can have various causes...",
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    }
   ])
+
+  const [currentConversation, setCurrentConversation] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimeoutRef = useRef<number | null>(null) // ✅ Fixed typing
+  const typingTimeoutRef = useRef<number | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -97,7 +124,13 @@ export default function ChatbotPage() {
     e.preventDefault()
     if (!inputMessage.trim() || isTyping) return
 
-    setMessages((prev) => [...prev, { text: inputMessage, isUser: true }])
+    const newMessage: Message = {
+      text: inputMessage,
+      isUser: true,
+      timestamp: new Date()
+    }
+
+    setMessages((prev) => [...prev, newMessage])
     setInputMessage("")
     setIsTyping(true)
 
@@ -106,56 +139,183 @@ export default function ChatbotPage() {
     }
 
     typingTimeoutRef.current = window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: "I understand your concern. Could you provide more details about your symptoms? For example, when did they start, and have you noticed any patterns or triggers?",
-          isUser: false,
-        },
-      ])
+      const botResponse: Message = {
+        text: "I understand your concern. Could you provide more details about your symptoms? For example, when did they start, and have you noticed any patterns or triggers?",
+        isUser: false,
+        timestamp: new Date()
+      }
+      setMessages((prev) => [...prev, botResponse])
       setIsTyping(false)
     }, 2000)
   }
 
+  const startNewConversation = () => {
+    setCurrentConversation(null)
+    setMessages([])
+    setIsSidebarOpen(false)
+  }
+
+  const selectConversation = (conversationId: string) => {
+    setCurrentConversation(conversationId)
+    setMessages([
+      {
+        text: "Hello! I'm your AI health assistant. How can I help you today?",
+        isUser: false,
+        timestamp: new Date()
+      }
+    ])
+    setIsSidebarOpen(false)
+  }
+
+  const quickActions = [
+    "Analyze symptoms",
+    "Get health advice", 
+    "Learn about conditions",
+    "Medication guidance",
+    "Emergency signs",
+    "Wellness tips"
+  ]
+
+  const formatTime = (date: Date) => {
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    if (diffInHours < 48) return "Yesterday"
+    return `${Math.floor(diffInHours / 24)}d ago`
+  }
+
+  const handleQuickAction = (action: string) => {
+    setInputMessage(action)
+    const syntheticEvent = {
+      preventDefault: () => {},
+    } as React.FormEvent
+    handleSubmit(syntheticEvent)
+  }
+
   return (
-      <div className={styles.container}>
-        <Navbar 
-          isLoggedIn={loggedIn} 
-          userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
-          onLogout={handleLogout} 
-        />
-        <div className={styles.content}>
-          <main className={styles.chatContainer}>
-            <div className={styles.header}>
-              <div className={styles.botAvatar}>
-                <Bot size={24} />
-              </div>
-              <h2>
-                AI Health Assistant
-                <div className={styles.status} title="Online"></div>
-              </h2>
+    <div className={styles.container}>
+      <Navbar 
+        isLoggedIn={loggedIn} 
+        userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
+        onLogout={handleLogout} 
+      />
+      
+      <div className={styles.chatLayout}>
+        {/* Mobile Menu Button */}
+        <button 
+          className={styles.mobileMenuButton}
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Sidebar */}
+        <div className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
+          <div className={styles.sidebarHeader}>
+            <div className={styles.sidebarTitle}>
+              <MessageSquare size={20} />
+              <span>Conversations</span>
             </div>
-            <div className={styles.messages}>
-              {messages.map((message, index) => (
+            <button className={styles.newChatButton} onClick={startNewConversation}>
+              <Plus size={18} />
+            </button>
+          </div>
+          
+          <div className={styles.conversationsList}>
+            {conversations.map((conversation) => (
+              <div 
+                key={conversation.id}
+                className={`${styles.conversationItem} ${currentConversation === conversation.id ? styles.active : ''}`}
+                onClick={() => selectConversation(conversation.id)}
+              >
+                <div className={styles.conversationTitle}>{conversation.title}</div>
+                <div className={styles.conversationPreview}>{conversation.lastMessage}</div>
+                <div className={styles.conversationTime}>{formatTime(conversation.timestamp)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Overlay for mobile */}
+        {isSidebarOpen && <div className={styles.overlay} onClick={() => setIsSidebarOpen(false)} />}
+
+        {/* Main Chat Area */}
+        <div className={styles.mainChat}>
+          {!currentConversation && messages.length === 0 ? (
+            // Welcome Screen
+            <div className={styles.welcomeScreen}>
+              <div className={styles.welcomeContent}>
+                <div className={styles.welcomeHeader}>
+                  <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{user?.name ? `, ${user.name}` : ''}!</h1>
+                  <p>What can I help you with today?</p>
+                </div>
+                
+                <div className={styles.quickActions}>
+                  {quickActions.map((action, index) => (
+                    <button 
+                      key={index}
+                      className={styles.quickActionButton}
+                      onClick={() => handleQuickAction(action)}
+                    >
+                      {action}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className={styles.inputSection}>
+                <form onSubmit={handleSubmit} className={styles.inputContainer}>
+                  <div className={styles.inputWrapper}>
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Ask anything..."
+                      className={styles.input}
+                      disabled={isTyping}
+                    />
+                    <div className={styles.inputActions}>
+                      <button type="button" className={styles.actionButton}>
+                        <Paperclip size={18} />
+                      </button>
+                      <button type="button" className={styles.actionButton}>
+                        <Mic size={18} />
+                      </button>
+                      <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
+                        <Send size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                
+                <div className={styles.disclaimer}>
+                  <Stethoscope size={16} />
+                  <span>SymptoSeek uses AI. Check for mistakes. Conversations are used to train AI and SymptoSeek can learn about your health patterns.</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Chat Messages
+            <div className={styles.chatMessages}>
+              <div className={styles.messagesContainer}>
+                {messages.map((message, index) => (
                   <div key={index} className={styles.messageWrapper}>
                     {!message.isUser && (
-                        <div className={styles.botAvatar}>
-                          <Bot size={20} />
-                        </div>
+                      <div className={styles.botAvatar}>
+                        <Stethoscope size={20} />
+                      </div>
                     )}
-                    <div
-                        className={`${styles.message} ${
-                            message.isUser ? styles.userMessage : styles.assistantMessage
-                        }`}
-                    >
+                    <div className={`${styles.message} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}>
                       {message.text}
                     </div>
                   </div>
-              ))}
-              {isTyping && (
+                ))}
+                {isTyping && (
                   <div className={styles.messageWrapper}>
                     <div className={styles.botAvatar}>
-                      <Bot size={20} />
+                      <Stethoscope size={20} />
                     </div>
                     <div className={styles.typing}>
                       <div className={styles.typingDot}></div>
@@ -163,81 +323,39 @@ export default function ChatbotPage() {
                       <div className={styles.typingDot}></div>
                     </div>
                   </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-            <form onSubmit={handleSubmit} className={styles.inputContainer}>
-              <div className={styles.inputWrapper}>
-                <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    className={styles.input}
-                    disabled={isTyping}
-                />
+                )}
+                <div ref={messagesEndRef} />
               </div>
-              <button type="submit" className={styles.button} disabled={!inputMessage.trim() || isTyping}>
-                <Send size={18} />
-                Send
-              </button>
-            </form>
-          </main>
-          <aside className={styles.sidebar}>
-            <section className={styles.section}>
-              <h2>
-                <Zap size={18} />
-                Quick Tips
-              </h2>
-              <ul>
-                <li>Be specific about your symptoms</li>
-                <li>Mention when symptoms started</li>
-                <li>Include any relevant medical history</li>
-                <li>Describe symptom severity</li>
-              </ul>
-            </section>
-            <section className={styles.section}>
-              <h2>
-                <BookOpen size={18} />
-                Resources
-              </h2>
-              <ul>
-                <li>
-                  <FileText size={16} />
-                  <a href="#">
-                    Health Guidelines
-                    <ExternalLink size={12} />
-                  </a>
-                </li>
-                <li>
-                  <FileText size={16} />
-                  <a href="#">
-                    Emergency Signs
-                    <ExternalLink size={12} />
-                  </a>
-                </li>
-                <li>
-                  <FileText size={16} />
-                  <a href="#">
-                    Wellness Tips
-                    <ExternalLink size={12} />
-                  </a>
-                </li>
-              </ul>
-            </section>
-            <section className={styles.section}>
-              <h2>
-                <History size={18} />
-                Recent Topics
-              </h2>
-              <ul>
-                <li>Sleep patterns analysis</li>
-                <li>Stress management</li>
-                <li>Diet recommendations</li>
-              </ul>
-            </section>
-          </aside>
+              
+              <div className={styles.inputSection}>
+                <form onSubmit={handleSubmit} className={styles.inputContainer}>
+                  <div className={styles.inputWrapper}>
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Ask anything..."
+                      className={styles.input}
+                      disabled={isTyping}
+                    />
+                    <div className={styles.inputActions}>
+                      <button type="button" className={styles.actionButton}>
+                        <Paperclip size={18} />
+                      </button>
+                      <button type="button" className={styles.actionButton}>
+                        <Mic size={18} />
+                      </button>
+                      <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
+                        <Send size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+    </div>
   )
 }
