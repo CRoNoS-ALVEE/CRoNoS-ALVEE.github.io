@@ -13,16 +13,11 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.3);
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.darkNavbar {
-  background: #1f2937;
-  border-bottom: 1px solid #374151;
-  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .navbarContent {
@@ -45,15 +40,16 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #374151;
+  background: #f3f4f6;
   border-radius: 8px;
   cursor: pointer;
-  color: white;
+  color: #4b5563;
   transition: all 0.2s ease;
 }
 
 .sidebarTrigger:hover {
-  background: #4b5563;
+  background: #9333ea;
+  color: white;
   transform: scale(1.05);
 }
 
@@ -62,19 +58,61 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: white;
+  color: #111827;
   font-size: 1.25rem;
+  cursor: pointer;
 }
 
 .logoIcon {
   width: 32px;
   height: 32px;
-  background: #9333ea;
+  background: linear-gradient(135deg, #9333ea 0%, #7928ca 100%);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+  }
+}
+
+.logoText {
+  background: linear-gradient(135deg, #9333ea 0%, #7928ca 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
+  font-weight: 700;
+}
+
+@keyframes shine {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.logoContainer:hover .logoIcon {
+  transform: rotate(-12deg) scale(1.1);
+  animation-play-state: paused;
+}
+
+.logoContainer:hover .logoText {
+  animation-duration: 0.5s;
 }
 
 .navbarRight {
@@ -113,34 +151,132 @@
 .navIconButton {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #6b7280;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 0.5rem;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .navIconButton:hover {
+  color: #9333ea;
+  background: #f3f4f6;
+}
+
+.notificationContainer {
+  position: relative;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
   color: white;
-  background: #374151;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.notificationHeader {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.notificationHeader h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.notificationList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.notificationItem:hover {
+  background: #f9fafb;
+}
+
+.notificationItem.unread {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+}
+
+.notificationContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notificationTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.notificationMessage {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.notificationTime {
+  font-size: 0.75rem;
+  color: #9ca3af;
 }
 
 .userProfile {
   display: flex;
   align-items: center;
-}
-
-.profileImage {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #374151;
+  text-decoration: none;
   transition: all 0.2s ease;
 }
 
-.profileImage:hover {
-  border-color: #6b7280;
+.userProfile:hover {
+  transform: scale(1.05);
+}
+
+.profileImage {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.userProfile:hover .profileImage {
+  border-color: #9333ea;
+  transform: scale(1.05);
 }
 
 /* Sidebar */
@@ -148,19 +284,31 @@
   position: fixed;
   top: 60px;
   left: 0;
-  width: 0;
+  width: 280px;
   height: calc(100vh - 60px);
   background: #f9fafb;
   border-right: 1px solid #e5e7eb;
-  transition: width 0.3s ease;
+  transition: transform 0.3s ease;
   z-index: 90;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  transform: translateX(-100%);
 }
 
 .sidebar.sidebarExpanded {
-  width: 280px;
+  transform: translateX(0);
+}
+
+.sidebarOverlay {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 85;
+  backdrop-filter: blur(2px);
 }
 
 .sidebarContent {
@@ -168,12 +316,7 @@
   flex-direction: column;
   height: 100%;
   padding: 1rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar.sidebarExpanded .sidebarContent {
-  opacity: 1;
+  width: 280px;
 }
 
 .sidebarTop {
@@ -310,11 +453,16 @@
   display: flex;
   flex-direction: column;
   background: #ffffff;
+  transition: margin-left 0.3s ease;
 }
 
 .loggedInLayout {
   margin-top: 60px;
   margin-left: 0;
+}
+
+.withSidebar {
+  margin-left: 280px;
 }
 
 .notLoggedInLayout {
@@ -592,11 +740,19 @@
 }
 
 @media (max-width: 768px) {
-  .sidebar.sidebarExpanded {
-    width: 100vw;
+  .notificationDropdown {
+    position: fixed;
+    top: 60px;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
   }
 
   .loggedInLayout {
+    margin-left: 0;
+  }
+
+  .withSidebar {
     margin-left: 0;
   }
 
@@ -631,15 +787,17 @@
     font-size: 0.875rem;
   }
 
-  .sidebar {
-    width: 280px;
+  .profileImage {
+    width: 38px;
+    height: 38px;
   }
 
-  .loggedInLayout {
-    margin-left: 0;
+  .logoContainer {
+    font-size: 1.125rem;
   }
 
-  .navButton {
-    display: none;
+  .logoIcon {
+    width: 28px;
+    height: 28px;
   }
 }
