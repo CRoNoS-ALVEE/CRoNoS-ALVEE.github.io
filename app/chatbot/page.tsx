@@ -6,6 +6,7 @@ import styles from "./chatbot.module.css"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import Link from "next/link"
+import Navbar from "../components/Navbar/Navbar"
 
 interface Message {
   text: string
@@ -218,99 +219,115 @@ export default function ChatbotPage() {
 
   return (
     <div className={styles.container}>
-      {loggedIn && (
-        <>
-          {/* Top Navbar */}
-          <div className={styles.topNavbar}>
-            <div className={styles.navbarContent}>
-              <div className={styles.navbarLeft}>
-                <div 
-                  className={styles.sidebarTrigger}
-                  onClick={toggleSidebarPin}
-                >
+      {/* Always show navbar */}
+      {loggedIn ? (
+        /* Top Navbar for logged in users */
+        <div className={`${styles.topNavbar} ${styles.darkNavbar}`}>
+          <div className={styles.navbarContent}>
+            <div className={styles.navbarLeft}>
+              <div 
+                className={styles.sidebarTrigger}
+                onClick={toggleSidebarPin}
+              >
+                <Menu size={20} />
+              </div>
+              <div className={styles.logoContainer}>
+                <div className={styles.logoIcon}>
                   <Stethoscope size={20} />
                 </div>
-                <div className={styles.navbarTitle}>
-                  <span>SymptoSeek</span>
-                </div>
-              </div>
-              <div className={styles.navbarRight}>
-                <button className={styles.navIconButton}>
-                  <Bell size={20} />
-                </button>
-                <div className={styles.userProfile}>
-                  <img 
-                    src={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
-                    alt="Profile" 
-                    className={styles.profileImage}
-                  />
-                </div>
+                <span>SymptoSeek</span>
               </div>
             </div>
-          </div>
-
-          {/* Sidebar */}
-          <div 
-            className={`${styles.sidebar} ${(isSidebarHovered || isSidebarPinned) ? styles.sidebarExpanded : ''}`}
-            onMouseEnter={handleMouseEnterSidebar}
-            onMouseLeave={handleMouseLeaveSidebar}
-          >
-            <div className={styles.sidebarContent}>
-              <div className={styles.sidebarTop}>
-                <div className={styles.sidebarSearch}>
-                  <Search size={16} />
-                  <input type="text" placeholder="Search..." />
-                </div>
+            <div className={styles.navbarRight}>
+              <div className={styles.upgradeSection}>
+                <span className={styles.upgradeText}>4,164</span>
+                <button className={styles.upgradeButton}>Upgrade</button>
               </div>
-
-            <div className={styles.sidebarHeader}>
-                <button className={styles.newChatButton} onClick={startNewConversation}>
-                  <Plus size={18} />
-                  <span>New chat</span>
-                </button>
-            </div>
-            
-            <div className={styles.conversationsList}>
-              {conversations.map((conversation) => (
-                <div 
-                  key={conversation.id}
-                  className={`${styles.conversationItem} ${currentConversation === conversation.id ? styles.active : ''}`}
-                  onClick={() => selectConversation(conversation.id)}
-                >
-                  <div className={styles.conversationTitle}>{conversation.title}</div>
-                  <div className={styles.conversationTime}>{formatTime(conversation.timestamp)}</div>
-                </div>
-              ))}
-            </div>
-
-              <div className={styles.sidebarBottom}>
-                <Link href="/dashboard" className={styles.sidebarNavItem}>
-                  <Home size={18} />
-                  <span>Dashboard</span>
-                </Link>
-                <Link href="/profile" className={styles.sidebarNavItem}>
-                  <User size={18} />
-                  <span>Profile</span>
-                </Link>
-                <Link href="/settings" className={styles.sidebarNavItem}>
-                  <Settings size={18} />
-                  <span>Settings</span>
-                </Link>
-                <button onClick={handleLogout} className={styles.sidebarNavItem}>
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
+              <button className={styles.navIconButton}>
+                <Bell size={20} />
+              </button>
+              <div className={styles.userProfile}>
+                <img 
+                  src={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
+                  alt="Profile" 
+                  className={styles.profileImage}
+                />
               </div>
             </div>
           </div>
-        </>
+        </div>
+      ) : (
+        /* Regular navbar for non-logged users */
+        <Navbar 
+          isLoggedIn={false} 
+          onLogout={handleLogout}
+        />
+      )}
+
+      {loggedIn && (
+        /* Sidebar only for logged in users */
+        <div 
+          className={`${styles.sidebar} ${(isSidebarHovered || isSidebarPinned) ? styles.sidebarExpanded : ''}`}
+          onMouseEnter={handleMouseEnterSidebar}
+          onMouseLeave={handleMouseLeaveSidebar}
+        >
+          <div className={styles.sidebarContent}>
+            <div className={styles.sidebarTop}>
+              <div className={styles.sidebarSearch}>
+                <Search size={16} />
+                <input type="text" placeholder="Search..." />
+              </div>
+            </div>
+
+          <div className={styles.sidebarHeader}>
+              <button className={styles.newChatButton} onClick={startNewConversation}>
+                <Plus size={18} />
+                <span>New chat</span>
+              </button>
+          </div>
+          
+          <div className={styles.conversationsList}>
+            {conversations.map((conversation) => (
+              <div 
+                key={conversation.id}
+                className={`${styles.conversationItem} ${currentConversation === conversation.id ? styles.active : ''}`}
+                onClick={() => selectConversation(conversation.id)}
+              >
+                <div className={styles.conversationTitle}>{conversation.title}</div>
+                <div className={styles.conversationTime}>{formatTime(conversation.timestamp)}</div>
+              </div>
+            ))}
+          </div>
+
+            <div className={styles.sidebarBottom}>
+              <Link href="/dashboard" className={styles.sidebarNavItem}>
+                <Home size={18} />
+                <span>Dashboard</span>
+              </Link>
+              <Link href="/profile" className={styles.sidebarNavItem}>
+                <User size={18} />
+                <span>Profile</span>
+              </Link>
+              <Link href="/settings" className={styles.sidebarNavItem}>
+                <Settings size={18} />
+                <span>Settings</span>
+              </Link>
+              <button onClick={handleLogout} className={styles.sidebarNavItem}>
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main Chat Area */}
-      <div className={`${styles.mainChat} ${loggedIn ? styles.loggedInLayout : ''}`}>
+      <div className={`${styles.mainChat} ${loggedIn ? styles.loggedInLayout : styles.notLoggedInLayout}`}>
         {!currentConversation && messages.length === 0 ? (
           // Welcome Screen
-          <div className={styles.welcomeScreen}>
+          <div 
+            className={`${styles.welcomeScreen} ${!loggedIn ? styles.welcomeScreenNotLoggedIn : ''}`}
+          >
             <div className={styles.welcomeContent}>
               <div className={styles.welcomeHeader}>
                 <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{user?.name ? `, ${user.name}` : ''}!</h1>
