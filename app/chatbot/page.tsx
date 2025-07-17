@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar/Navbar"
 import styles from "./chatbot.module.css"
 import { useRouter } from "next/navigation"
 import axios from "axios"
+import Link from "next/link"
 
 interface Message {
   text: string
@@ -77,7 +78,7 @@ export default function ChatbotPage() {
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
     },
     {
-      id: "2", 
+      id: "2",
       title: "Chest Pain Consultation",
       lastMessage: "Let me help you understand your chest pain...",
       timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -169,7 +170,7 @@ export default function ChatbotPage() {
 
   const quickActions = [
     "Analyze symptoms",
-    "Get health advice", 
+    "Get health advice",
     "Learn about conditions",
     "Medication guidance",
     "Emergency signs",
@@ -179,7 +180,7 @@ export default function ChatbotPage() {
   const formatTime = (date: Date) => {
     const now = new Date()
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
+
     if (diffInHours < 1) return "Just now"
     if (diffInHours < 24) return `${diffInHours}h ago`
     if (diffInHours < 48) return "Yesterday"
@@ -195,167 +196,202 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <Navbar 
-        isLoggedIn={loggedIn} 
-        userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
-        onLogout={handleLogout} 
-      />
-      
-      <div className={styles.chatLayout}>
-        {/* Mobile Menu Button */}
-        <button 
-          className={styles.mobileMenuButton}
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <Menu size={20} />
-        </button>
+      <div className={styles.container}>
+        {/* Conditional Navbar - only show for non-logged-in users */}
+        {!loggedIn && (
+            <Navbar
+                isLoggedIn={false}
+                userImage=""
+                onLogout={handleLogout}
+            />
+        )}
 
-        {/* Sidebar */}
-        <div className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
-          <div className={styles.sidebarHeader}>
-            <div className={styles.sidebarTitle}>
-              <MessageSquare size={20} />
-              <span>Conversations</span>
-            </div>
-            <button className={styles.newChatButton} onClick={startNewConversation}>
-              <Plus size={18} />
-            </button>
-          </div>
-          
-          <div className={styles.conversationsList}>
-            {conversations.map((conversation) => (
-              <div 
-                key={conversation.id}
-                className={`${styles.conversationItem} ${currentConversation === conversation.id ? styles.active : ''}`}
-                onClick={() => selectConversation(conversation.id)}
-              >
-                <div className={styles.conversationTitle}>{conversation.title}</div>
-                <div className={styles.conversationPreview}>{conversation.lastMessage}</div>
-                <div className={styles.conversationTime}>{formatTime(conversation.timestamp)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Overlay for mobile */}
-        {isSidebarOpen && <div className={styles.overlay} onClick={() => setIsSidebarOpen(false)} />}
-
-        {/* Main Chat Area */}
-        <div className={styles.mainChat}>
-          {!currentConversation && messages.length === 0 ? (
-            // Welcome Screen
-            <div className={styles.welcomeScreen}>
-              <div className={styles.welcomeContent}>
-                <div className={styles.welcomeHeader}>
-                  <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{user?.name ? `, ${user.name}` : ''}!</h1>
-                  <p>What can I help you with today?</p>
-                </div>
-                
-                <div className={styles.quickActions}>
-                  {quickActions.map((action, index) => (
-                    <button 
-                      key={index}
-                      className={styles.quickActionButton}
-                      onClick={() => handleQuickAction(action)}
+        {/* Logged-in Layout */}
+        {loggedIn && (
+            <>
+              {/* Top Navbar for logged-in users */}
+              <div className={styles.topNavbar}>
+                <div className={styles.navbarContent}>
+                  <div className={styles.navbarLeft}>
+                    <button
+                        className={styles.sidebarToggle}
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     >
-                      {action}
+                      <Menu size={20} />
                     </button>
+                    <div className={styles.navbarTitle}>
+                      <Stethoscope size={24} className={styles.navbarLogo} />
+                      <span>SymptoSeek</span>
+                    </div>
+                  </div>
+                  <div className={styles.navbarRight}>
+                    <Link href="/dashboard" className={styles.navButton}>
+                      Dashboard
+                    </Link>
+                    <Link href="/doctors" className={styles.navButton}>
+                      Doctors
+                    </Link>
+                    <div className={styles.userProfile}>
+                      <img
+                          src={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"}
+                          alt="Profile"
+                          className={styles.profileImage}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar for logged-in users */}
+              <div className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
+                <div className={styles.sidebarHeader}>
+                  <div className={styles.sidebarTop}>
+                    <button className={styles.newChatButton} onClick={startNewConversation}>
+                      <Plus size={18} />
+                      <span>New chat</span>
+                    </button>
+                    <button
+                        className={styles.closeSidebarButton}
+                        onClick={() => setIsSidebarOpen(false)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.conversationsList}>
+                  {conversations.map((conversation) => (
+                      <div
+                          key={conversation.id}
+                          className={`${styles.conversationItem} ${currentConversation === conversation.id ? styles.active : ''}`}
+                          onClick={() => selectConversation(conversation.id)}
+                      >
+                        <div className={styles.conversationTitle}>{conversation.title}</div>
+                        <div className={styles.conversationTime}>{formatTime(conversation.timestamp)}</div>
+                      </div>
                   ))}
                 </div>
               </div>
-              
-              <div className={styles.inputSection}>
-                <form onSubmit={handleSubmit} className={styles.inputContainer}>
-                  <div className={styles.inputWrapper}>
-                    <input
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder="Ask anything..."
-                      className={styles.input}
-                      disabled={isTyping}
-                    />
-                    <div className={styles.inputActions}>
-                      <button type="button" className={styles.actionButton}>
-                        <Paperclip size={18} />
-                      </button>
-                      <button type="button" className={styles.actionButton}>
-                        <Mic size={18} />
-                      </button>
-                      <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
-                        <Send size={18} />
-                      </button>
-                    </div>
+            </>
+        )}
+
+        {/* Overlay for mobile sidebar */}
+        {loggedIn && isSidebarOpen && <div className={styles.overlay} onClick={() => setIsSidebarOpen(false)} />}
+
+        {/* Main Chat Area */}
+        <div className={`${styles.mainChat} ${loggedIn ? styles.loggedInLayout : styles.guestLayout}`}>
+          {!currentConversation && messages.length === 0 ? (
+              // Welcome Screen
+              <div className={styles.welcomeScreen}>
+                <div className={styles.welcomeContent}>
+                  <div className={styles.welcomeHeader}>
+                    <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{user?.name ? `, ${user.name}` : ''}!</h1>
+                    <p>What can I help you with today?</p>
                   </div>
-                </form>
-                
-                <div className={styles.disclaimer}>
-                  <Stethoscope size={16} />
-                  <span>SymptoSeek uses AI. Check for mistakes. Conversations are used to train AI and SymptoSeek can learn about your health patterns.</span>
+
+                  <div className={styles.quickActions}>
+                    {quickActions.map((action, index) => (
+                        <button
+                            key={index}
+                            className={styles.quickActionButton}
+                            onClick={() => handleQuickAction(action)}
+                        >
+                          {action}
+                        </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.inputSection}>
+                  <form onSubmit={handleSubmit} className={styles.inputContainer}>
+                    <div className={styles.inputWrapper}>
+                      <input
+                          type="text"
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          placeholder="Ask anything..."
+                          className={styles.input}
+                          disabled={isTyping}
+                      />
+                      <div className={styles.inputActions}>
+                        <button type="button" className={styles.actionButton}>
+                          <Paperclip size={18} />
+                        </button>
+                        <button type="button" className={styles.actionButton}>
+                          <Mic size={18} />
+                        </button>
+                        <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
+                          <Send size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  <div className={styles.disclaimer}>
+                    <Stethoscope size={16} />
+                    <span>SymptoSeek uses AI. Check for mistakes. Conversations are used to train AI and SymptoSeek can learn about your health patterns.</span>
+                  </div>
                 </div>
               </div>
-            </div>
           ) : (
-            // Chat Messages
-            <div className={styles.chatMessages}>
-              <div className={styles.messagesContainer}>
-                {messages.map((message, index) => (
-                  <div key={index} className={styles.messageWrapper}>
-                    {!message.isUser && (
-                      <div className={styles.botAvatar}>
-                        <Stethoscope size={20} />
+              // Chat Messages
+              <div className={styles.chatMessages}>
+                <div className={styles.messagesContainer}>
+                  {messages.map((message, index) => (
+                      <div key={index} className={styles.messageWrapper}>
+                        {!message.isUser && (
+                            <div className={styles.botAvatar}>
+                              <Stethoscope size={20} />
+                            </div>
+                        )}
+                        <div className={`${styles.message} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}>
+                          {message.text}
+                        </div>
                       </div>
-                    )}
-                    <div className={`${styles.message} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}>
-                      {message.text}
+                  ))}
+                  {isTyping && (
+                      <div className={styles.messageWrapper}>
+                        <div className={styles.botAvatar}>
+                          <Stethoscope size={20} />
+                        </div>
+                        <div className={styles.typing}>
+                          <div className={styles.typingDot}></div>
+                          <div className={styles.typingDot}></div>
+                          <div className={styles.typingDot}></div>
+                        </div>
+                      </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className={styles.inputSection}>
+                  <form onSubmit={handleSubmit} className={styles.inputContainer}>
+                    <div className={styles.inputWrapper}>
+                      <input
+                          type="text"
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          placeholder="Ask anything..."
+                          className={styles.input}
+                          disabled={isTyping}
+                      />
+                      <div className={styles.inputActions}>
+                        <button type="button" className={styles.actionButton}>
+                          <Paperclip size={18} />
+                        </button>
+                        <button type="button" className={styles.actionButton}>
+                          <Mic size={18} />
+                        </button>
+                        <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
+                          <Send size={18} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className={styles.messageWrapper}>
-                    <div className={styles.botAvatar}>
-                      <Stethoscope size={20} />
-                    </div>
-                    <div className={styles.typing}>
-                      <div className={styles.typingDot}></div>
-                      <div className={styles.typingDot}></div>
-                      <div className={styles.typingDot}></div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+                  </form>
+                </div>
               </div>
-              
-              <div className={styles.inputSection}>
-                <form onSubmit={handleSubmit} className={styles.inputContainer}>
-                  <div className={styles.inputWrapper}>
-                    <input
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder="Ask anything..."
-                      className={styles.input}
-                      disabled={isTyping}
-                    />
-                    <div className={styles.inputActions}>
-                      <button type="button" className={styles.actionButton}>
-                        <Paperclip size={18} />
-                      </button>
-                      <button type="button" className={styles.actionButton}>
-                        <Mic size={18} />
-                      </button>
-                      <button type="submit" className={styles.sendButton} disabled={!inputMessage.trim() || isTyping}>
-                        <Send size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
           )}
         </div>
       </div>
-    </div>
   )
 }
