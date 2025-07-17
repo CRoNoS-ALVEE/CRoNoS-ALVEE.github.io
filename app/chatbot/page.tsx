@@ -28,12 +28,14 @@ export default function ChatbotPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/auth");
+        setLoggedIn(false);
+        setLoading(false);
         return;
       }
       try {
@@ -42,11 +44,11 @@ export default function ChatbotPage() {
           headers: {Authorization: `Bearer ${token}`},
         });
         setUser(response.data);
+        setLoggedIn(true);
       } catch (err) {
         console.error("Failed to fetch user data:", err);
         setError("Failed to fetch user data.");
-        localStorage.removeItem("token");
-        router.push("/auth");
+        setLoggedIn(false);
       } finally {
         setLoading(false);
       }
@@ -59,6 +61,7 @@ export default function ChatbotPage() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
       setUser(null);
+      setLoggedIn(false);
       router.push("/auth");
     }
   };
@@ -116,7 +119,11 @@ export default function ChatbotPage() {
 
   return (
       <div className={styles.container}>
-        <Navbar isLoggedIn={true} userImage={user?.profile_pic || "/default-avatar.png"} onLogout={handleLogout} />
+        <Navbar 
+          isLoggedIn={loggedIn} 
+          userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
+          onLogout={handleLogout} 
+        />
         <div className={styles.content}>
           <main className={styles.chatContainer}>
             <div className={styles.header}>
