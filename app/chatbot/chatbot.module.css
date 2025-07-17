@@ -19,13 +19,18 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.darkNavbar {
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  color: white;
+}
+
 .navbarContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 100%;
   padding: 0 1.5rem;
-  color: #111827;
 }
 
 .navbarLeft {
@@ -40,7 +45,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #9333ea;
+  background: #374151;
   border-radius: 8px;
   cursor: pointer;
   color: white;
@@ -48,17 +53,28 @@
 }
 
 .sidebarTrigger:hover {
-  background: #7928ca;
+  background: #4b5563;
   transform: scale(1.05);
 }
 
-.navbarTitle {
+.logoContainer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #111827;
+  color: white;
   font-size: 1.25rem;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  background: #9333ea;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 }
 
 .navbarRight {
@@ -67,10 +83,37 @@
   gap: 1rem;
 }
 
+.upgradeSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upgradeText {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.upgradeButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upgradeButton:hover {
+  background: #2563eb;
+}
+
 .navIconButton {
   background: none;
   border: none;
-  color: #6b7280;
+  color: #9ca3af;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 0.5rem;
@@ -78,8 +121,8 @@
 }
 
 .navIconButton:hover {
-  color: #9333ea;
-  background: #f3f4f6;
+  color: white;
+  background: #374151;
 }
 
 .userProfile {
@@ -92,12 +135,12 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #374151;
   transition: all 0.2s ease;
 }
 
 .profileImage:hover {
-  border-color: #9333ea;
+  border-color: #6b7280;
 }
 
 /* Sidebar */
@@ -105,9 +148,9 @@
   position: fixed;
   top: 60px;
   left: 0;
-  width: 60px;
+  width: 0;
   height: calc(100vh - 60px);
-  background: white;
+  background: #f9fafb;
   border-right: 1px solid #e5e7eb;
   transition: width 0.3s ease;
   z-index: 90;
@@ -125,6 +168,12 @@
   flex-direction: column;
   height: 100%;
   padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.sidebarExpanded .sidebarContent {
+  opacity: 1;
 }
 
 .sidebarTop {
@@ -135,11 +184,12 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #f9fafb;
+  background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   padding: 0.5rem;
   color: #6b7280;
+  min-width: 240px;
 }
 
 .sidebarSearch input {
@@ -149,6 +199,7 @@
   color: #111827;
   font-size: 0.875rem;
   flex: 1;
+  width: 100%;
 }
 
 .sidebarSearch input::placeholder {
@@ -165,13 +216,14 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0.75rem;
-  background: #f9fafb;
+  background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   color: #6b7280;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 240px;
 }
 
 .newChatButton:hover {
@@ -192,10 +244,11 @@
   transition: all 0.2s ease;
   margin-bottom: 0.25rem;
   color: #6b7280;
+  min-width: 240px;
 }
 
 .conversationItem:hover {
-  background: #f9fafb;
+  background: white;
   color: #111827;
 }
 
@@ -239,10 +292,11 @@
   width: 100%;
   text-align: left;
   cursor: pointer;
+  min-width: 240px;
 }
 
 .sidebarNavItem:hover {
-  background: #f9fafb;
+  background: white;
   color: #9333ea;
 }
 
@@ -260,8 +314,11 @@
 
 .loggedInLayout {
   margin-top: 60px;
-  margin-left: 60px;
-  transition: margin-left 0.3s ease;
+  margin-left: 0;
+}
+
+.notLoggedInLayout {
+  margin-top: 64px; /* Height of regular navbar */
 }
 
 .welcomeScreen {
@@ -274,6 +331,10 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+}
+
+.welcomeScreenNotLoggedIn {
+  padding-top: 4rem; /* Add extra padding for non-logged users */
 }
 
 .welcomeContent {
