@@ -13,16 +13,11 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.3);
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.darkNavbar {
-  background: #1f2937;
-  border-bottom: 1px solid #374151;
-  color: white;
+  transition: all 0.3s ease;
 }
 
 .navbarContent {
@@ -30,7 +25,7 @@
   align-items: center;
   justify-content: space-between;
   height: 100%;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
 }
 
 .navbarLeft {
@@ -39,42 +34,44 @@
   gap: 1rem;
 }
 
-.sidebarTrigger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: #374151;
-  border-radius: 8px;
+.sidebarToggle {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
   cursor: pointer;
-  color: white;
+  color: #6b7280;
   transition: all 0.2s ease;
 }
 
-.sidebarTrigger:hover {
-  background: #4b5563;
-  transform: scale(1.05);
+.sidebarToggle:hover {
+  background: #f3f4f6;
+  color: #9333ea;
 }
 
-.logoContainer {
+.navbarTitle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: white;
-  font-size: 1.25rem;
+  color: #111827;
+  font-size: 1.125rem;
+  text-decoration: none;
+  transition: transform 0.3s ease;
 }
 
-.logoIcon {
-  width: 32px;
-  height: 32px;
-  background: #9333ea;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+.navbarTitle:hover {
+  transform: scale(1.02);
+}
+
+.navbarLogo {
+  color: #9333ea;
+  transition: all 0.3s ease;
+}
+
+.navbarTitle:hover .navbarLogo {
+  transform: rotate(-12deg);
+  color: #7928ca;
 }
 
 .navbarRight {
@@ -83,158 +80,168 @@
   gap: 1rem;
 }
 
-.upgradeSection {
+.profileContainer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  position: relative;
 }
 
-.upgradeText {
-  color: #9ca3af;
-  font-size: 0.875rem;
-}
-
-.upgradeButton {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.upgradeButton:hover {
-  background: #2563eb;
-}
-
-.navIconButton {
+.profileButton {
   background: none;
   border: none;
-  color: #9ca3af;
+  padding: 0;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
 }
 
-.navIconButton:hover {
-  color: white;
-  background: #374151;
-}
-
-.userProfile {
-  display: flex;
-  align-items: center;
-}
-
-.profileImage {
-  width: 36px;
-  height: 36px;
+.profilePicture {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #374151;
+  overflow: hidden;
+  border: 2px solid #9333ea;
   transition: all 0.2s ease;
 }
 
-.profileImage:hover {
-  border-color: #6b7280;
+.profilePicture:hover {
+  transform: scale(1.05);
+  border-color: #7928ca;
 }
 
-/* Sidebar */
+.profilePicture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 200px;
+  padding: 0.5rem;
+  z-index: 100;
+  animation: slideDown 0.2s ease-out;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #4b5563;
+  text-decoration: none;
+  width: 100%;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0.375rem;
+}
+
+.dropdownItem:hover {
+  background: #f3f4f6;
+  color: #9333ea;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.navButton {
+  padding: 0.5rem 1rem;
+  color: #4b5563;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.navButton:hover {
+  background: #f3f4f6;
+  color: #9333ea;
+}
+
+/* Sidebar for logged-in users */
 .sidebar {
   position: fixed;
   top: 60px;
   left: 0;
-  width: 0;
+  width: 260px;
   height: calc(100vh - 60px);
-  background: #f9fafb;
+  background: #ffffff;
   border-right: 1px solid #e5e7eb;
-  transition: width 0.3s ease;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
   z-index: 90;
   overflow-y: auto;
-  overflow-x: hidden;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
-.sidebar.sidebarExpanded {
-  width: 280px;
-}
-
-.sidebarContent {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 1rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar.sidebarExpanded .sidebarContent {
-  opacity: 1;
-}
-
-.sidebarTop {
-  margin-bottom: 1rem;
-}
-
-.sidebarSearch {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  color: #6b7280;
-  min-width: 240px;
-}
-
-.sidebarSearch input {
-  background: none;
-  border: none;
-  outline: none;
-  color: #111827;
-  font-size: 0.875rem;
-  flex: 1;
-  width: 100%;
-}
-
-.sidebarSearch input::placeholder {
-  color: #9ca3af;
+.sidebar.sidebarOpen {
+  transform: translateX(0);
 }
 
 .sidebarHeader {
-  margin-bottom: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebarTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .newChatButton {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem;
-  background: white;
+  gap: 0.75rem;
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  color: #6b7280;
+  color: #374151;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 240px;
 }
 
 .newChatButton:hover {
   background: #f3f4f6;
-  color: #9333ea;
   border-color: #9333ea;
+  color: #9333ea;
+}
+
+.closeSidebarButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeSidebarButton:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
 }
 
 .conversationsList {
-  flex: 1;
-  margin-bottom: 1rem;
+  padding: 0.5rem;
 }
 
 .conversationItem {
@@ -243,13 +250,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 0.25rem;
-  color: #6b7280;
-  min-width: 240px;
 }
 
 .conversationItem:hover {
-  background: white;
-  color: #111827;
+  background: #f9fafb;
 }
 
 .conversationItem.active {
@@ -260,6 +264,7 @@
 .conversationTitle {
   font-size: 0.875rem;
   font-weight: 500;
+  color: #111827;
   margin-bottom: 0.25rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -268,40 +273,7 @@
 
 .conversationTime {
   font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.sidebarBottom {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 1rem;
-}
-
-.sidebarNavItem {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
   color: #6b7280;
-  text-decoration: none;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  margin-bottom: 0.25rem;
-  border: none;
-  background: none;
-  font-size: 0.875rem;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  min-width: 240px;
-}
-
-.sidebarNavItem:hover {
-  background: white;
-  color: #9333ea;
-}
-
-.sidebarNavItem span {
-  white-space: nowrap;
 }
 
 /* Main Chat Area */
@@ -317,8 +289,8 @@
   margin-left: 0;
 }
 
-.notLoggedInLayout {
-  margin-top: 64px; /* Height of regular navbar */
+.guestLayout {
+  margin-top: 64px; /* Account for regular navbar */
 }
 
 .welcomeScreen {
@@ -331,10 +303,6 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
-}
-
-.welcomeScreenNotLoggedIn {
-  padding-top: 4rem; /* Add extra padding for non-logged users */
 }
 
 .welcomeContent {
@@ -365,25 +333,23 @@
 }
 
 .quickActionButton {
-  background: white;
+  background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
   padding: 1rem 1.5rem;
-  color: #6b7280;
+  color: #4b5563;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
   font-size: 0.875rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .quickActionButton:hover {
-  background: #f9fafb;
+  background: #f3e8ff;
   border-color: #9333ea;
   color: #9333ea;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .inputSection {
@@ -449,7 +415,7 @@
 
 .actionButton:hover {
   color: #9333ea;
-  background: #f3f4f6;
+  background: #f3e8ff;
 }
 
 .sendButton {
@@ -557,7 +523,7 @@
 .typingDot {
   width: 6px;
   height: 6px;
-  background: #6b7280;
+  background: #9ca3af;
   border-radius: 50%;
   animation: typingAnimation 1.4s infinite;
 }
@@ -589,15 +555,28 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 80;
+  backdrop-filter: blur(4px);
 }
 
 @media (max-width: 768px) {
-  .sidebar.sidebarExpanded {
-    width: 100vw;
+  .sidebarToggle {
+    display: block;
+  }
+
+  .sidebar {
+    width: 280px;
   }
 
   .loggedInLayout {
     margin-left: 0;
+  }
+
+  .navButton {
+    display: none;
+  }
+
+  .overlay {
+    display: block;
   }
 
   .welcomeHeader h1 {
@@ -635,11 +614,54 @@
     width: 280px;
   }
 
-  .loggedInLayout {
-    margin-left: 0;
+  .closeSidebarButton {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcomeHeader h1 {
+    font-size: 1.75rem;
   }
 
-  .navButton {
+  .quickActions {
+    grid-template-columns: 1fr;
+  }
+
+  .quickActionButton {
+    padding: 0.875rem 1rem;
+  }
+
+  .inputWrapper {
+    padding: 0.875rem 1rem;
+  }
+
+  .disclaimer {
+    font-size: 0.6875rem;
+    padding: 0;
+  }
+}
+
+/* Desktop sidebar always visible when logged in */
+@media (min-width: 1024px) {
+  .sidebar {
+    transform: translateX(0);
+    position: fixed;
+  }
+
+  .closeSidebarButton {
+    display: none;
+  }
+
+  .loggedInLayout {
+    margin-left: 260px;
+  }
+
+  .sidebarToggle {
+    display: none;
+  }
+
+  .overlay {
     display: none;
   }
 }
