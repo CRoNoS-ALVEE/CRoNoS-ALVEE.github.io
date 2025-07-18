@@ -530,3 +530,24 @@
     font-size: 1.25rem;
   }
 }
+
+.timerDisplay {
+  text-align: center;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #fef2f2;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+}
+
+.resendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resendButton:disabled:hover {
+  color: #6b7280;
+}

@@ -23,11 +23,47 @@ export default function AuthContent() {
   const [error, setError] = useState("") // to display error messages
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
   const [otp, setOtp] = useState("")
   const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotOtp, setForgotOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [otpLoading, setOtpLoading] = useState(false)
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false)
+  const [signupOtpTimer, setSignupOtpTimer] = useState(60)
+  const [forgotOtpTimer, setForgotOtpTimer] = useState(60)
+  const [showForgotOtpField, setShowForgotOtpField] = useState(false)
+  const [signupTimerActive, setSignupTimerActive] = useState(false)
+  const [forgotTimerActive, setForgotTimerActive] = useState(false)
   const router = useRouter()
+
+  // Timer effect for signup OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (signupTimerActive && signupOtpTimer > 0) {
+      interval = setInterval(() => {
+        setSignupOtpTimer(prev => prev - 1)
+      }, 1000)
+    } else if (signupOtpTimer === 0) {
+      setSignupTimerActive(false)
+    }
+    return () => clearInterval(interval)
+  }, [signupTimerActive, signupOtpTimer])
+
+  // Timer effect for forgot password OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (forgotTimerActive && forgotOtpTimer > 0) {
+      interval = setInterval(() => {
+        setForgotOtpTimer(prev => prev - 1)
+      }, 1000)
+    } else if (forgotOtpTimer === 0) {
+      setForgotTimerActive(false)
+    }
+    return () => clearInterval(interval)
+  }, [forgotTimerActive, forgotOtpTimer])
 
   const handleSignUpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -118,6 +154,8 @@ export default function AuthContent() {
       if (result.status === 201) {
         console.log("Sign-up successful")
         setShowOtpModal(true)
+        setSignupOtpTimer(60)
+        setSignupTimerActive(true)
         setLoading(false)
       } else {
         setError("Sign-up failed. Please try again.")
@@ -170,18 +208,86 @@ export default function AuthContent() {
     setError("")
 
     try {
-      // Simulate forgot password API call
+      // Simulate sending OTP to email
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // On successful request
-      alert("Password reset link has been sent to your email!")
-      setShowForgotPasswordModal(false)
-      setForgotEmail("")
+      // Show OTP field and start timer
+      setShowForgotOtpField(true)
+      setForgotOtpTimer(60)
+      setForgotTimerActive(true)
     } catch (err: unknown) {
       console.error("Forgot password failed:", err)
-      setError("Failed to send reset email. Please try again.")
+      setError("Failed to send OTP. Please try again.")
     } finally {
       setForgotPasswordLoading(false)
+    }
+  }
+
+  const handleForgotOtpVerification = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!forgotOtp) {
+      setError("Please enter the OTP.")
+      return
+    }
+
+    setOtpLoading(true)
+    setError("")
+
+    try {
+      // Simulate OTP verification
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // On successful verification, show reset password modal
+      setShowForgotPasswordModal(false)
+      setShowResetPasswordModal(true)
+    } catch (err: unknown) {
+      console.error("OTP verification failed:", err)
+      setError("Invalid OTP. Please try again.")
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!newPassword || !confirmPassword) {
+      setError("Please fill in both password fields.")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long.")
+      return
+    }
+
+    setResetPasswordLoading(true)
+    setError("")
+
+    try {
+      // Simulate password reset API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // On successful reset
+      alert("Password reset successfully! Please login with your new password.")
+      setShowResetPasswordModal(false)
+      // Reset all states
+      setForgotEmail("")
+      setForgotOtp("")
+      setNewPassword("")
+      setConfirmPassword("")
+      setShowForgotOtpField(false)
+    } catch (err: unknown) {
+      console.error("Password reset failed:", err)
+      setError("Failed to reset password. Please try again.")
+    } finally {
+      setResetPasswordLoading(false)
     }
   }
 
@@ -189,12 +295,39 @@ export default function AuthContent() {
     setShowOtpModal(false)
     setOtp("")
     setError("")
+    setSignupTimerActive(false)
+    setSignupOtpTimer(60)
   }
 
   const closeForgotPasswordModal = () => {
     setShowForgotPasswordModal(false)
     setForgotEmail("")
+    setForgotOtp("")
+    setShowForgotOtpField(false)
+    setForgotTimerActive(false)
+    setForgotOtpTimer(60)
     setError("")
+  }
+
+  const closeResetPasswordModal = () => {
+    setShowResetPasswordModal(false)
+    setNewPassword("")
+    setConfirmPassword("")
+    setError("")
+  }
+
+  const handleResendSignupOtp = () => {
+    setSignupOtpTimer(60)
+    setSignupTimerActive(true)
+    // Here you would make API call to resend OTP
+    console.log("Resending signup OTP...")
+  }
+
+  const handleResendForgotOtp = () => {
+    setForgotOtpTimer(60)
+    setForgotTimerActive(true)
+    // Here you would make API call to resend OTP
+    console.log("Resending forgot password OTP...")
   }
 
   return (
@@ -338,6 +471,9 @@ export default function AuthContent() {
               <p className={styles.modalDescription}>
                 We've sent a verification code to your email address. Please enter the code below to complete your registration.
               </p>
+              <div className={styles.timerDisplay}>
+                Time remaining: {Math.floor(signupOtpTimer / 60)}:{(signupOtpTimer % 60).toString().padStart(2, '0')}
+              </div>
               <form onSubmit={handleOtpVerification}>
                 <div className={styles.inputField}>
                   <i>
@@ -361,8 +497,13 @@ export default function AuthContent() {
               </form>
               <div className={styles.resendSection}>
                 <p>Didn't receive the code?</p>
-                <button type="button" className={styles.resendButton}>
-                  Resend OTP
+                <button 
+                  type="button" 
+                  className={styles.resendButton}
+                  onClick={handleResendSignupOtp}
+                  disabled={signupTimerActive}
+                >
+                  {signupTimerActive ? `Resend in ${signupOtpTimer}s` : "Resend OTP"}
                 </button>
               </div>
             </div>
@@ -380,26 +521,123 @@ export default function AuthContent() {
             <div className={styles.modalContent}>
               <h2 className={styles.modalTitle}>Reset Password</h2>
               <p className={styles.modalDescription}>
-                Enter your email address and we'll send you a link to reset your password.
+                Enter your email address and we'll send you an OTP to reset your password.
               </p>
-              <form onSubmit={handleForgotPassword}>
+              {!showForgotOtpField ? (
+                <form onSubmit={handleForgotPassword}>
+                  <div className={styles.inputField}>
+                    <i>
+                      <FontAwesomeIcon icon={faEnvelope} />
+                    </i>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email" 
+                      value={forgotEmail} 
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                    />
+                  </div>
+                  {error && <p className={styles.error}>{error}</p>}
+                  <input 
+                    type="submit" 
+                    value={forgotPasswordLoading ? "Sending..." : "Send OTP"} 
+                    className={styles.btn} 
+                    disabled={forgotPasswordLoading} 
+                  />
+                </form>
+              ) : (
+                <form onSubmit={handleForgotOtpVerification}>
+                  <div className={styles.inputField}>
+                    <i>
+                      <FontAwesomeIcon icon={faEnvelope} />
+                    </i>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email" 
+                      value={forgotEmail} 
+                      disabled
+                    />
+                  </div>
+                  <div className={styles.timerDisplay}>
+                    Time remaining: {Math.floor(forgotOtpTimer / 60)}:{(forgotOtpTimer % 60).toString().padStart(2, '0')}
+                  </div>
+                  <div className={styles.inputField}>
+                    <i>
+                      <FontAwesomeIcon icon={faLock} />
+                    </i>
+                    <input 
+                      type="text" 
+                      placeholder="Enter OTP" 
+                      value={forgotOtp} 
+                      onChange={(e) => setForgotOtp(e.target.value)}
+                      maxLength={6}
+                    />
+                  </div>
+                  {error && <p className={styles.error}>{error}</p>}
+                  <input 
+                    type="submit" 
+                    value={otpLoading ? "Verifying..." : "Verify OTP"} 
+                    className={styles.btn} 
+                    disabled={otpLoading} 
+                  />
+                  <div className={styles.resendSection}>
+                    <p>Didn't receive the code?</p>
+                    <button 
+                      type="button" 
+                      className={styles.resendButton}
+                      onClick={handleResendForgotOtp}
+                      disabled={forgotTimerActive}
+                    >
+                      {forgotTimerActive ? `Resend in ${forgotOtpTimer}s` : "Resend OTP"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <button className={styles.closeButton} onClick={closeResetPasswordModal}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className={styles.modalContent}>
+              <h2 className={styles.modalTitle}>Set New Password</h2>
+              <p className={styles.modalDescription}>
+                Enter your new password below.
+              </p>
+              <form onSubmit={handleResetPassword}>
                 <div className={styles.inputField}>
                   <i>
-                    <FontAwesomeIcon icon={faEnvelope} />
+                    <FontAwesomeIcon icon={faLock} />
                   </i>
                   <input 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={forgotEmail} 
-                    onChange={(e) => setForgotEmail(e.target.value)}
+                    type="password" 
+                    placeholder="New Password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faLock} />
+                  </i>
+                  <input 
+                    type="password" 
+                    placeholder="Confirm Password" 
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                 </div>
                 {error && <p className={styles.error}>{error}</p>}
                 <input 
                   type="submit" 
-                  value={forgotPasswordLoading ? "Sending..." : "Send Reset Link"} 
+                  value={resetPasswordLoading ? "Resetting..." : "Reset Password"} 
                   className={styles.btn} 
-                  disabled={forgotPasswordLoading} 
+                  disabled={resetPasswordLoading} 
                 />
               </form>
             </div>
