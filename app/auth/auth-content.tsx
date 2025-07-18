@@ -2,7 +2,7 @@
 
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import { useGoogleLogin } from "@react-oauth/google"
 import Image from "next/image"
