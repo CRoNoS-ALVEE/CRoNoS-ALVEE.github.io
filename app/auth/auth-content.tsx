@@ -7,7 +7,7 @@ import axios from "axios"
 import { useGoogleLogin } from "@react-oauth/google"
 import Image from "next/image"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faLock, faEnvelope } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faLock, faEnvelope, faTimes } from "@fortawesome/free-solid-svg-icons"
 import { faGoogle, faMicrosoft, faTwitter } from "@fortawesome/free-brands-svg-icons"
 import styles from "./auth.module.css"
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,12 @@ export default function AuthContent() {
   const [name, setName] = useState("") // for sign-up form
   const [loading, setLoading] = useState(false) // to manage loading state
   const [error, setError] = useState("") // to display error messages
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const router = useRouter()
 
   const handleSignUpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -111,7 +117,8 @@ export default function AuthContent() {
 
       if (result.status === 201) {
         console.log("Sign-up successful")
-        router.push("/dashboard")
+        setShowOtpModal(true)
+        setLoading(false)
       } else {
         setError("Sign-up failed. Please try again.")
       }
@@ -119,11 +126,79 @@ export default function AuthContent() {
       console.error("Sign-up failed:", err)
       setError("An error occurred. Please try again later.")
     } finally {
-      setLoading(false)
+      if (!showOtpModal) {
+        setLoading(false)
+      }
     }
   }
 
+  const handleOtpVerification = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!otp) {
+      setError("Please enter the OTP.")
+      return
+    }
+
+    setOtpLoading(true)
+    setError("")
+
+    try {
+      // Simulate OTP verification API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // On successful verification
+      setShowOtpModal(false)
+      router.push("/dashboard")
+    } catch (err: unknown) {
+      console.error("OTP verification failed:", err)
+      setError("Invalid OTP. Please try again.")
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!forgotEmail) {
+      setError("Please enter your email address.")
+      return
+    }
+
+    setForgotPasswordLoading(true)
+    setError("")
+
+    try {
+      // Simulate forgot password API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // On successful request
+      alert("Password reset link has been sent to your email!")
+      setShowForgotPasswordModal(false)
+      setForgotEmail("")
+    } catch (err: unknown) {
+      console.error("Forgot password failed:", err)
+      setError("Failed to send reset email. Please try again.")
+    } finally {
+      setForgotPasswordLoading(false)
+    }
+  }
+
+  const closeOtpModal = () => {
+    setShowOtpModal(false)
+    setOtp("")
+    setError("")
+  }
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPasswordModal(false)
+    setForgotEmail("")
+    setError("")
+  }
+
   return (
+    <>
       <div className={`${styles.container} ${isSignUpMode ? styles.signUpMode : ""}`}>
         <div className={styles.formsContainer}>
           <div className={styles.signinSignup}>
@@ -141,6 +216,15 @@ export default function AuthContent() {
                   <FontAwesomeIcon icon={faLock} />
                 </i>
                 <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+              <div className={styles.forgotPassword}>
+                <button 
+                  type="button" 
+                  className={styles.forgotPasswordLink}
+                  onClick={() => setShowForgotPasswordModal(true)}
+                >
+                  Forgot Password?
+                </button>
               </div>
               {error && <p className={styles.error}>{error}</p>} {/* Error message */}
               <input type="submit" value={loading ? "Logging in..." : "Login"} className={styles.btn} disabled={loading} />
@@ -241,5 +325,87 @@ export default function AuthContent() {
           </div>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <button className={styles.closeButton} onClick={closeOtpModal}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className={styles.modalContent}>
+              <h2 className={styles.modalTitle}>Verify Your Email</h2>
+              <p className={styles.modalDescription}>
+                We've sent a verification code to your email address. Please enter the code below to complete your registration.
+              </p>
+              <form onSubmit={handleOtpVerification}>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faLock} />
+                  </i>
+                  <input 
+                    type="text" 
+                    placeholder="Enter OTP" 
+                    value={otp} 
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                  />
+                </div>
+                {error && <p className={styles.error}>{error}</p>}
+                <input 
+                  type="submit" 
+                  value={otpLoading ? "Verifying..." : "Verify OTP"} 
+                  className={styles.btn} 
+                  disabled={otpLoading} 
+                />
+              </form>
+              <div className={styles.resendSection}>
+                <p>Didn't receive the code?</p>
+                <button type="button" className={styles.resendButton}>
+                  Resend OTP
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPasswordModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <button className={styles.closeButton} onClick={closeForgotPasswordModal}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className={styles.modalContent}>
+              <h2 className={styles.modalTitle}>Reset Password</h2>
+              <p className={styles.modalDescription}>
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              <form onSubmit={handleForgotPassword}>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faEnvelope} />
+                  </i>
+                  <input 
+                    type="email" 
+                    placeholder="Enter your email" 
+                    value={forgotEmail} 
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                </div>
+                {error && <p className={styles.error}>{error}</p>}
+                <input 
+                  type="submit" 
+                  value={forgotPasswordLoading ? "Sending..." : "Send Reset Link"} 
+                  className={styles.btn} 
+                  disabled={forgotPasswordLoading} 
+                />
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
