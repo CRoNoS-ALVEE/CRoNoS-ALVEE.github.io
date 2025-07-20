@@ -39,7 +39,7 @@ export default function ChatbotPage() {
   const [error, setError] = useState("")
   const [loggedIn, setLoggedIn] = useState(false)
   
-    useEffect(() => {
+  useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token")
       if (!token) {
@@ -48,7 +48,8 @@ export default function ChatbotPage() {
         return
       }
       try {
-        const response = await axios.get(`http://localhost:5000/api/auth/profile`, {
+        const userId = localStorage.getItem("id")
+        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setUser(response.data)
@@ -57,6 +58,7 @@ export default function ChatbotPage() {
         console.error("Failed to fetch user data:", err)
         setError("Failed to fetch user data.")
         setLoggedIn(false)
+        // Don't redirect to auth, just show non-logged state
       } finally {
         setLoading(false)
       }
@@ -220,14 +222,37 @@ export default function ChatbotPage() {
       return
     }
 
+    // Handle non-logged-in users
+    if (!loggedIn) {
+      // Simulate AI response for non-logged users
+      setTimeout(() => {
+        const responses = [
+          "I can help you with basic health information. For personalized advice and doctor recommendations, please sign up or log in.",
+          "Based on your symptoms, I'd recommend consulting with a healthcare professional. Sign up to get personalized doctor recommendations in your area.",
+          "I can provide general health guidance. For detailed analysis and local doctor suggestions, please create an account.",
+          "That sounds concerning. While I can offer general advice, I'd strongly recommend seeing a doctor. Sign up to find qualified doctors near you."
+        ]
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)]
+        
+        const botResponse: Message = {
+          text: randomResponse,
+          isUser: false,
+          timestamp: new Date()
+        }
+        setMessages((prev: Message[]) => [...prev, botResponse])
+        setIsTyping(false)
+      }, 1500)
+      return
+    }
+
     try {
       const token = localStorage.getItem("token")
       if (!token) {
         setError("Authentication error. Please login again.")
-        router.push("/auth")
+        setLoggedIn(false)
+        setIsTyping(false)
         return
       }
-
       // Get user location if available
       let userLocation: UserLocation = { latitude: null, longitude: null }
       if (navigator.geolocation) {
@@ -386,6 +411,11 @@ export default function ChatbotPage() {
     handleSubmit(syntheticEvent)
   }
 
+  // Show loading state
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
   return (
       <div className={styles.container}>
         {/* Always show navbar */}
@@ -533,8 +563,8 @@ export default function ChatbotPage() {
               >
                 <div className={styles.welcomeContent}>
                   <div className={styles.welcomeHeader}>
-                    <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{user?.name ? `, ${user.name}` : ''}!</h1>
-                    <p>What can I help you with today?</p>
+                    <h1>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{loggedIn && user?.name ? `, ${user.name}` : ''}!</h1>
+                    <p>{loggedIn ? 'What can I help you with today?' : 'Get AI-powered health insights. Sign up for personalized recommendations!'}</p>
                   </div>
 
                   <div className={styles.quickActions}>
@@ -577,7 +607,7 @@ export default function ChatbotPage() {
 
                   <div className={styles.disclaimer}>
                     <Stethoscope size={16} />
-                    <span>SymptoSeek uses AI. Check for mistakes. Conversations are used to train AI and SymptoSeek can learn about your health patterns.</span>
+                    <span>SymptoSeek uses AI. Check for mistakes. {loggedIn ? 'Conversations are used to train AI and SymptoSeek can learn about your health patterns.' : 'Sign up for personalized health tracking.'}</span>
                   </div>
                 </div>
               </div>

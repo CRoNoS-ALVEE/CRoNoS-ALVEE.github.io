@@ -466,7 +466,8 @@
 }
 
 .notLoggedInLayout {
-  margin-top: 64px; /* Height of regular navbar */
+  margin-top: 64px;
+  margin-left: 0;
 }
 
 .welcomeScreen {
@@ -482,7 +483,18 @@
 }
 
 .welcomeScreenNotLoggedIn {
-  padding-top: 4rem; /* Add extra padding for non-logged users */
+  padding-top: 2rem;
+}
+
+.welcomeScreenNotLoggedIn .welcomeHeader h1 {
+  background: linear-gradient(135deg, #9333ea 0%, #7928ca 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcomeScreenNotLoggedIn .welcomeHeader p {
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .welcomeContent {
@@ -754,6 +766,10 @@
 
   .withSidebar {
     margin-left: 0;
+  }
+
+  .notLoggedInLayout {
+    margin-top: 64px;
   }
 
   .welcomeHeader h1 {
