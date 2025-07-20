@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Bot, Plus, Mic, Paperclip, Send, MessageSquare, Stethoscope, Menu, X, Search, Bell, User, Settings, LogOut, Home, Calendar, FileText } from "lucide-react"
 import styles from "./chatbot.module.css"
 import { useRouter } from "next/navigation"
@@ -21,6 +21,11 @@ interface Conversation {
   timestamp: Date
 }
 
+interface UserLocation {
+  latitude: number | null
+  longitude: number | null
+}
+
 export default function ChatbotPage() {
   const router = useRouter()
 
@@ -33,8 +38,8 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [loggedIn, setLoggedIn] = useState(false)
-
-  useEffect(() => {
+  
+    useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token")
       if (!token) {
@@ -43,8 +48,7 @@ export default function ChatbotPage() {
         return
       }
       try {
-        const userId = localStorage.getItem("id")
-        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+        const response = await axios.get(`http://localhost:5000/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setUser(response.data)
@@ -61,9 +65,11 @@ export default function ChatbotPage() {
     fetchUserData()
   }, [router])
 
+
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token")
+      localStorage.removeItem("id")
       setUser(null)
       setLoggedIn(false)
       router.push("/auth")
@@ -198,23 +204,119 @@ export default function ChatbotPage() {
       timestamp: new Date()
     }
 
-    setMessages((prev) => [...prev, newMessage])
+    setMessages((prev: Message[]) => [...prev, newMessage])
+    const userMessage = inputMessage
     setInputMessage("")
     setIsTyping(true)
 
-    if (typingTimeoutRef.current) {
-      window.clearTimeout(typingTimeoutRef.current)
+    // Check for reset command
+    if (userMessage.toLowerCase() === 'reset') {
+      setMessages([{
+        text: "Session has been reset. How can I help you today?",
+        isUser: false,
+        timestamp: new Date()
+      }])
+      setIsTyping(false)
+      return
     }
 
-    typingTimeoutRef.current = window.setTimeout(() => {
-      const botResponse: Message = {
-        text: "I understand your concern. Could you provide more details about your symptoms? For example, when did they start, and have you noticed any patterns or triggers?",
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setError("Authentication error. Please login again.")
+        router.push("/auth")
+        return
+      }
+
+      // Get user location if available
+      let userLocation: UserLocation = { latitude: null, longitude: null }
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject)
+          })
+          userLocation.latitude = position.coords.latitude
+          userLocation.longitude = position.coords.longitude
+        } catch (err) {
+          console.warn("Could not get location:", err)
+        }
+      }
+
+      const response = await axios.post(
+        'http://localhost:5000/api/chat',
+        {
+          message: userMessage,
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      const data = response.data
+
+      if (data.success && data.bot_response_parts) {
+        // Process bot response parts
+        for (const part of data.bot_response_parts) {
+          if (part.type === 'text') {
+            const botResponse: Message = {
+              text: part.content,
+              isUser: false,
+              timestamp: new Date()
+            }
+            setMessages((prev: Message[]) => [...prev, botResponse])
+          } else if (part.type === 'doctors' && Array.isArray(part.content)) {
+            // Handle doctors list
+            let doctorText = "Here are some recommended doctors:\n\n"
+            part.content.forEach((doc: any, index: number) => {
+              doctorText += `${index + 1}. **${doc.name || 'N/A'}**\n`
+              doctorText += `   ${doc.degree || ''}\n`
+              doctorText += `   Specialty: ${doc.speciality || 'N/A'}\n`
+              doctorText += `   Hospital: ${doc.hospital_name || 'N/A'}\n`
+              doctorText += `   Phone: ${doc.number || 'N/A'}\n\n`
+            })
+            
+            const doctorMessage: Message = {
+              text: doctorText,
+              isUser: false,
+              timestamp: new Date()
+            }
+            setMessages((prev: Message[]) => [...prev, doctorMessage])
+          }
+        }
+      } else {
+        // Handle cases where success is false
+        const botResponse: Message = {
+          text: data.message || "I'm here to help. Could you provide more details about your symptoms?",
+          isUser: false,
+          timestamp: new Date()
+        }
+        setMessages((prev: Message[]) => [...prev, botResponse])
+      }
+    } catch (error: any) {
+      console.error('Send message error:', error)
+      let errorMessage = "I'm having trouble connecting right now. Please try again."
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Your session has expired. Please login again."
+        router.push("/auth")
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+      
+      const errorResponse: Message = {
+        text: errorMessage,
         isUser: false,
         timestamp: new Date()
       }
-      setMessages((prev) => [...prev, botResponse])
+      setMessages((prev: Message[]) => [...prev, errorResponse])
+    } finally {
       setIsTyping(false)
-    }, 2000)
+    }
   }
 
   const startNewConversation = () => {
@@ -234,12 +336,12 @@ export default function ChatbotPage() {
   }
 
   const quickActions = [
-    "Analyze symptoms",
-    "Get health advice",
-    "Learn about conditions",
-    "Medication guidance",
-    "Emergency signs",
-    "Wellness tips"
+    "I have a headache",
+    "I'm feeling nauseous", 
+    "I have chest pain",
+    "I have a fever",
+    "I have stomach pain",
+    "Find doctors near me"
   ]
 
   const notifications = [
