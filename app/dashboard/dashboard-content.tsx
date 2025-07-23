@@ -28,31 +28,35 @@ export default function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/auth");
-        return;
-      }
-      try {
-        const userId = localStorage.getItem("id");
-        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
-          headers: {Authorization: `Bearer ${token}`},
-        });
-        setUser(response.data);
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        setError("Failed to fetch user data.");
-        // localStorage.removeItem("token");
-        // router.push("/auth");
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchUserData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/auth");
+      return;
+    }
 
-    fetchUserData();
-  }, [router]);
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUser(response.data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+      setError("Failed to fetch user data.");
+      // Optionally clear token and redirect
+      localStorage.removeItem("token");
+      router.push("/auth");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUserData();
+}, [router]);
+
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -102,7 +106,7 @@ export default function DashboardContent() {
 
   return (
       <div className={styles.container}>
-        <Navbar isLoggedIn={true} userImage={user?.profile_pic || "/default-avatar.png"} onLogout={handleLogout} />
+        <Navbar isLoggedIn={true} userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} onLogout={handleLogout} />
         <main className={styles.main}>
           <section className={styles.welcomeSection}>
             <Particles
