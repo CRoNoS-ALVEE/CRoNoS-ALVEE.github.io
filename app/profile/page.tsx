@@ -103,8 +103,7 @@ export default function ProfilePage() {
         return;
       }
       try {
-        const userId = localStorage.getItem("id");
-        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
           headers: {Authorization: `Bearer ${token}`},
         });
         console.log(response.data)
