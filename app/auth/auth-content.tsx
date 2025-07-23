@@ -37,6 +37,7 @@ export default function AuthContent() {
   const [showForgotOtpField, setShowForgotOtpField] = useState(false)
   const [signupTimerActive, setSignupTimerActive] = useState(false)
   const [forgotTimerActive, setForgotTimerActive] = useState(false)
+  const [signupEmail, setSignupEmail] = useState("") // Store email for OTP verification
   const router = useRouter()
 
   // Timer effect for signup OTP
@@ -104,13 +105,15 @@ export default function AuthContent() {
     setError("") // Clear previous errors
 
     try {
-      const result = await axios.post<{ user: {
-          email: string,
+      const result = await axios.post<{
+        token: string,
+        user: {
           id: string,
           name: string,
-          profile_pic: string,
-          token: string
-        } }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+          email: string,
+          profile_pic: string
+        }
+      }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
         email,
         password,
       })
@@ -119,14 +122,18 @@ export default function AuthContent() {
         console.log("Login successful")
         console.log(result.data.user.id)
         localStorage.setItem("id", result.data.user.id);
-        localStorage.setItem("token", result.data.user.token);
+        localStorage.setItem("token", result.data.token);
         router.push("/dashboard")
       } else {
         setError("Login failed. Please check your credentials.")
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Login failed:", err)
-      setError("An error occurred. Please try again later.")
+      if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("An error occurred. Please try again later.")
+      }
     } finally {
       setLoading(false)
     }
@@ -153,16 +160,21 @@ export default function AuthContent() {
 
       if (result.status === 201) {
         console.log("Sign-up successful")
+        setSignupEmail(email) // Store email for OTP verification
         setShowOtpModal(true)
-        setSignupOtpTimer(60)
+        setSignupOtpTimer(600) // 10 minutes = 600 seconds
         setSignupTimerActive(true)
         setLoading(false)
       } else {
         setError("Sign-up failed. Please try again.")
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Sign-up failed:", err)
-      setError("An error occurred. Please try again later.")
+      if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("An error occurred. Please try again later.")
+      }
     } finally {
       if (!showOtpModal) {
         setLoading(false)
@@ -182,15 +194,29 @@ export default function AuthContent() {
     setError("")
 
     try {
-      // Simulate OTP verification API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-email`, {
+        email: signupEmail,
+        otp: otp,
+      })
 
-      // On successful verification
-      setShowOtpModal(false)
-      router.push("/dashboard")
-    } catch (err: unknown) {
+      if (result.status === 200) {
+        console.log("Email verification successful")
+        setShowOtpModal(false)
+        alert("Email verified successfully! You can now log in.")
+        // Reset form and switch to sign in mode
+        setIsSignUpMode(false)
+        setEmail("")
+        setPassword("")
+        setName("")
+        setOtp("")
+      }
+    } catch (err: any) {
       console.error("OTP verification failed:", err)
-      setError("Invalid OTP. Please try again.")
+      if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("Invalid OTP. Please try again.")
+      }
     } finally {
       setOtpLoading(false)
     }
@@ -296,7 +322,7 @@ export default function AuthContent() {
     setOtp("")
     setError("")
     setSignupTimerActive(false)
-    setSignupOtpTimer(60)
+    setSignupOtpTimer(600) // Reset to 10 minutes
   }
 
   const closeForgotPasswordModal = () => {
@@ -316,11 +342,27 @@ export default function AuthContent() {
     setError("")
   }
 
-  const handleResendSignupOtp = () => {
-    setSignupOtpTimer(60)
-    setSignupTimerActive(true)
-    // Here you would make API call to resend OTP
-    console.log("Resending signup OTP...")
+  const handleResendSignupOtp = async () => {
+    try {
+      const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/resend-otp`, {
+        email: signupEmail,
+      })
+
+      if (result.status === 200) {
+        setSignupOtpTimer(600) // Reset to 10 minutes
+        setSignupTimerActive(true)
+        console.log("Signup OTP resent successfully")
+        // Clear any existing error
+        setError("")
+      }
+    } catch (err: any) {
+      console.error("Failed to resend OTP:", err)
+      if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("Failed to resend OTP. Please try again.")
+      }
+    }
   }
 
   const handleResendForgotOtp = () => {
@@ -469,7 +511,7 @@ export default function AuthContent() {
                 <div className={styles.modalContent}>
                   <h2 className={styles.modalTitle}>Verify Your Email</h2>
                   <p className={styles.modalDescription}>
-                    We've sent a verification code to your email address. Please enter the code below to complete your registration.
+                    We've sent a verification code to <strong>{signupEmail}</strong>. Please enter the code below to complete your registration.
                   </p>
                   <div className={styles.timerDisplay}>
                     Time remaining: {Math.floor(signupOtpTimer / 60)}:{(signupOtpTimer % 60).toString().padStart(2, '0')}
@@ -481,7 +523,7 @@ export default function AuthContent() {
                       </i>
                       <input
                           type="text"
-                          placeholder="Enter OTP"
+                          placeholder="Enter 6-digit OTP"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
                           maxLength={6}
