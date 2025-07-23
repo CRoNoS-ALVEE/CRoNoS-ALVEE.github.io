@@ -129,7 +129,21 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("Login failed:", err)
-      if (err.response?.data?.message) {
+      
+      // Handle specific error cases
+      if (err.response?.status === 404) {
+        setError("User doesn't exist. Please check your email or sign up.")
+      } else if (err.response?.status === 401) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("email")) {
+          setError("Incorrect email address. Please try again.")
+        } else if (errorMessage.includes("password")) {
+          setError("Incorrect password. Please try again.")
+        } else {
+          setError("Incorrect credentials. Please check your email and password.")
+        }
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message)
       } else {
         setError("An error occurred. Please try again later.")
@@ -145,6 +159,19 @@ export default function AuthContent() {
     // Basic form validation for Sign Up
     if (!name || !email || !password) {
       setError("Please fill in all fields.")
+      return
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.")
+      return
+    }
+
+    // Password strength validation
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.")
       return
     }
 
@@ -170,7 +197,19 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("Sign-up failed:", err)
-      if (err.response?.data?.message) {
+      
+      // Handle specific error cases
+      if (err.response?.status === 409 || err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("email") && (errorMessage.includes("exist") || errorMessage.includes("already") || errorMessage.includes("taken"))) {
+          setError("User already exists with this email. Please try logging in or use a different email.")
+        } else if (errorMessage.includes("duplicate") || errorMessage.includes("unique")) {
+          setError("User already exists with this email. Please try logging in or use a different email.")
+        } else {
+          setError(err.response.data.message || "Sign-up failed. Please try again.")
+        }
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message)
       } else {
         setError("An error occurred. Please try again later.")
@@ -187,6 +226,11 @@ export default function AuthContent() {
 
     if (!otp) {
       setError("Please enter the OTP.")
+      return
+    }
+
+    if (otp.length !== 6) {
+      setError("OTP must be 6 digits long.")
       return
     }
 
@@ -209,10 +253,25 @@ export default function AuthContent() {
         setPassword("")
         setName("")
         setOtp("")
+        setSignupEmail("")
       }
     } catch (err: any) {
       console.error("OTP verification failed:", err)
-      if (err.response?.data?.message) {
+      
+      // Handle specific OTP error cases
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("expired")) {
+          setError("OTP has expired. Please request a new one.")
+        } else if (errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
+          setError("Invalid OTP. Please check and try again.")
+        } else if (errorMessage.includes("attempts")) {
+          setError("Too many failed attempts. Please request a new OTP.")
+        } else {
+          setError(err.response.data.message || "Invalid OTP. Please try again.")
+        }
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message)
       } else {
         setError("Invalid OTP. Please try again.")
@@ -344,6 +403,8 @@ export default function AuthContent() {
 
   const handleResendSignupOtp = async () => {
     try {
+      setError("") // Clear any existing errors
+      
       const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/resend-otp`, {
         email: signupEmail,
       })
@@ -352,12 +413,20 @@ export default function AuthContent() {
         setSignupOtpTimer(600) // Reset to 10 minutes
         setSignupTimerActive(true)
         console.log("Signup OTP resent successfully")
-        // Clear any existing error
+        // Show success message briefly
+        const successMessage = "OTP sent successfully! Check your email."
         setError("")
+        // You could add a success state here if needed
       }
     } catch (err: any) {
       console.error("Failed to resend OTP:", err)
-      if (err.response?.data?.message) {
+      
+      // Handle resend OTP errors
+      if (err.response?.status === 429) {
+        setError("Too many requests. Please wait before requesting another OTP.")
+      } else if (err.response?.status === 404) {
+        setError("Email not found. Please check your email address.")
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message)
       } else {
         setError("Failed to resend OTP. Please try again.")
