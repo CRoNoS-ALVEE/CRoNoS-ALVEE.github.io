@@ -48,8 +48,7 @@ export default function Home() {
                 setUser(response.data);
             } catch (err) {
                 console.error("Failed to fetch user data:", err);
-                // Don't set error for homepage - just keep user as not logged in
-                console.log("User not logged in, continuing as guest");
+                setError("Failed to fetch user data.");
                 // localStorage.removeItem("token");
                 // router.push("/auth");
             } finally {

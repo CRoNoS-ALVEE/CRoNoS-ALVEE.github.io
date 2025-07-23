@@ -17,104 +17,35 @@ export default function DashboardContent() {
   const router = useRouter();
 
   interface User {
-    _id: string;
-    name: string;
-    email: string;
-    bio: string;
-    gender: string;
-    age: number | null;
-    phone: string;
-    address: string;
-    zip_code: string;
-    country: string;
-    state: string;
-    city: string;
     profile_pic?: string;
-    role: string;
-    status: string;
-    blood_group: string;
-    weight: string;
-    height: string;
-    allergies: string;
-    medical_conditions: string;
-    medications: string;
-    surgeries: string;
-    family_medical_history: string;
-    emergency_contact: string;
-    date: string;
-    __v: number;
+    name?: string;
   }
+  /*
+   This is a Login function
+ */
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("id");
-      
-      console.log('Dashboard - Token:', token ? 'Present' : 'Missing');
-      console.log('Dashboard - User ID:', userId);
-      
       if (!token) {
-        console.log('Dashboard - No token found, redirecting to auth');
         router.push("/auth");
         return;
       }
-      
-      if (!userId) {
-        console.log('Dashboard - No user ID found, redirecting to auth');
-        localStorage.removeItem("token");
-        router.push("/auth");
-        return;
-      }
-      
       try {
-        console.log('Dashboard - Making API call to:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/profile/${userId}`);
-
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/profile/${userId}`, {
+        const userId = localStorage.getItem("id");
+        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
           headers: {Authorization: `Bearer ${token}`},
         });
-        
-        console.log('Dashboard - API Response status:', response.status);
-        console.log('Dashboard - API Response data:', response.data);
-        
-        if (response.data) {
-          setUser(response.data);
-          setIsLoggedIn(true);
-          setError("");
-          console.log('Dashboard - User data set successfully');
-        } else {
-          throw new Error("No user data received");
-        }
+        setUser(response.data);
       } catch (err) {
-        console.error("Dashboard - Failed to fetch user data:", err);
-        
-        if (axios.isAxiosError(err)) {
-          console.log('Dashboard - Axios error status:', err.response?.status);
-          console.log('Dashboard - Axios error data:', err.response?.data);
-          
-          if (err.response?.status === 401) {
-            console.log('Dashboard - Unauthorized, clearing token');
-            localStorage.removeItem("token");
-            localStorage.removeItem("id");
-            router.push("/auth");
-            return;
-          } else if (err.response?.status === 404) {
-            setError(`User not found with ID: ${userId}. Please login again.`);
-            localStorage.removeItem("token");
-            localStorage.removeItem("id");
-            setTimeout(() => router.push("/auth"), 2000);
-          } else {
-            setError(`Failed to fetch user data: ${err.response?.data?.message || err.message}`);
-          }
-        } else {
-          setError("Network error. Please check your connection and try again.");
-        }
-        
-        setIsLoggedIn(false);
+        console.error("Failed to fetch user data:", err);
+        setError("Failed to fetch user data.");
+        // localStorage.removeItem("token");
+        // router.push("/auth");
       } finally {
         setLoading(false);
       }
@@ -126,9 +57,7 @@ export default function DashboardContent() {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
-      localStorage.removeItem("id");
       setUser(null);
-      setIsLoggedIn(false);
       router.push("/auth");
     }
   };
@@ -168,68 +97,12 @@ export default function DashboardContent() {
     },
   ]
 
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingSpinner}></div>
-          <p>Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.errorContainer}>
-          <div className={styles.errorIcon}>⚠️</div>
-          <h2>Something went wrong</h2>
-          <p className={styles.errorMessage}>{error}</p>
-          <div className={styles.errorActions}>
-            <button 
-              onClick={() => window.location.reload()} 
-              className={styles.retryButton}
-            >
-              Try Again
-            </button>
-            <button 
-              onClick={() => router.push("/auth")} 
-              className={styles.loginButton}
-            >
-              Go to Login
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoggedIn || !user) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.errorContainer}>
-          <div className={styles.errorIcon}>🔒</div>
-          <h2>Authentication Required</h2>
-          <p>Please login to access your dashboard.</p>
-          <button 
-            onClick={() => router.push("/auth")} 
-            className={styles.loginButton}
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <p className={styles.loading}></p>;
+  if (error) return <p className={styles.error}>{error}</p>;
 
   return (
       <div className={styles.container}>
-        <Navbar 
-          isLoggedIn={isLoggedIn} 
-          userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} 
-          onLogout={handleLogout} 
-        />
+        <Navbar isLoggedIn={true} userImage={user?.profile_pic || "/default-avatar.png"} onLogout={handleLogout} />
         <main className={styles.main}>
           <section className={styles.welcomeSection}>
             <Particles
@@ -300,7 +173,7 @@ export default function DashboardContent() {
                 }}
             />
             <div className={styles.welcomeContent}>
-              <h1 className={styles.welcomeTitle}>Welcome back, {user.name}!</h1>
+              <h1 className={styles.welcomeTitle}>Welcome back, {user?.name || "User"}! </h1>
               <p className={styles.welcomeText}>
                 Track your health journey and manage your appointments all in one place
               </p>
