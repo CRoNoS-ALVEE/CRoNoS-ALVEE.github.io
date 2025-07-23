@@ -24,23 +24,33 @@ import {
   Building
 } from "lucide-react"
 import styles from "./doctors.module.css"
+import axios from "axios"
 
 interface Doctor {
-  id: string
+  _id: string
   name: string
-  specialty: string
-  experience: string
-  rating: number
-  availability: string
-  hospital: string
-  location: string
-  email: string
-  phone: string
-  status: string
-  image: string
-  education: string[]
-  specializations: string[]
-  languages: string[]
+  speciality: string
+  address: string
+  visiting_hours: string
+  hospital_name: string
+  image_source: string
+  number: string
+  degree: string
+  About: string
+  latitude: string
+  longitude: string
+}
+
+interface Pagination {
+  currentPage: number
+  totalPages: number
+  totalDoctors: number
+  doctorsPerPage: number
+}
+
+interface ApiResponse {
+  doctors: Doctor[]
+  pagination: Pagination
 }
 
 interface DoctorFormData {
@@ -59,60 +69,6 @@ interface DoctorFormData {
   specializations: string[];
   languages: string[];
 }
-
-const doctors: Doctor[] = [
-  {
-    id: '1',
-    name: 'Dr. John Smith',
-    specialty: 'Cardiologist',
-    experience: '15 years',
-    rating: 4.8,
-    availability: 'Mon-Fri',
-    hospital: 'Heart Care Center',
-    location: 'New York',
-    email: 'john.smith@example.com',
-    phone: '123-456-7890',
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop',
-    education: ['MD from Harvard Medical School', 'Cardiology Fellowship at Mayo Clinic'],
-    specializations: ['Interventional Cardiology', 'Heart Failure Management', 'Preventive Cardiology'],
-    languages: ['English', 'Spanish']
-  },
-  {
-    id: '2',
-    name: 'Dr. Sarah Wilson',
-    specialty: 'Pediatrician',
-    experience: '12 years',
-    rating: 4.9,
-    availability: 'Mon-Thu',
-    hospital: 'Children\'s Medical Center',
-    location: 'Los Angeles',
-    email: 'sarah.wilson@example.com',
-    phone: '987-654-3210',
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop',
-    education: ['MD from UCLA', 'Pediatrics Residency at Boston Children\'s Hospital'],
-    specializations: ['General Pediatrics', 'Developmental Pediatrics', 'Adolescent Medicine'],
-    languages: ['English', 'Spanish']
-  },
-  {
-    id: '3',
-    name: 'Dr. Michael Chen',
-    specialty: 'Neurologist',
-    experience: '10 years',
-    rating: 4.7,
-    availability: 'Mon-Sat',
-    hospital: 'Brain & Spine Institute',
-    location: 'Chicago',
-    email: 'michael.chen@example.com',
-    phone: '555-123-4567',
-    status: 'inactive',
-    image: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&h=400&fit=crop',
-    education: ['MD from Stanford University', 'Neurology Residency at Johns Hopkins'],
-    specializations: ['General Neurology', 'Stroke Care', 'Headache Management'],
-    languages: ['English', 'Mandarin']
-  }
-];
 
 export default function DoctorsPage() {
   const router = useRouter()
@@ -141,16 +97,44 @@ export default function DoctorsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [pagination, setPagination] = useState<Pagination>({
+    currentPage: 1,
+    totalPages: 1,
+    totalDoctors: 0,
+    doctorsPerPage: 12,
+  });
+  const [error, setError] = useState("")
 
-  const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)))
-  const statuses = Array.from(new Set(doctors.map(doctor => doctor.status)))
-  const locations = Array.from(new Set(doctors.map(doctor => doctor.location)))
-  const availabilities = Array.from(new Set(doctors.map(doctor => doctor.availability)))
+  // const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)))
+  // const statuses = Array.from(new Set(doctors.map(doctor => doctor.status)))
+  // const locations = Array.from(new Set(doctors.map(doctor => doctor.location)))
+  // const availabilities = Array.from(new Set(doctors.map(doctor => doctor.availability)))
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken")
     router.push("/admin/auth")
   }
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await axios.get<ApiResponse>(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/doctors?page=${currentPage}&limit=12`
+        )
+
+        console.log("Fetched doctors:", response.data.doctors)
+        setDoctors(response.data.doctors)
+        setPagination(response.data.pagination)
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err)
+        setError("Failed to fetch doctors data.")
+      }
+    }
+
+    fetchDoctors()
+  }, [currentPage])
 
   const handleAddDoctor = (e: React.FormEvent) => {
     e.preventDefault()
@@ -263,7 +247,7 @@ export default function DoctorsPage() {
 
             <div className={styles.filterGroup}>
               <Filter size={20} />
-              <select
+              {/* <select
                   value={selectedSpecialty}
                   onChange={(e) => setSelectedSpecialty(e.target.value)}
               >
@@ -271,9 +255,9 @@ export default function DoctorsPage() {
                 {specialties.map(specialty => (
                     <option key={specialty} value={specialty}>{specialty}</option>
                 ))}
-              </select>
+              </select> */}
 
-              <select
+              {/* <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
               >
@@ -283,19 +267,19 @@ export default function DoctorsPage() {
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </option>
                 ))}
-              </select>
+              </select> */}
             </div>
           </div>
 
           <div className={styles.doctorsGrid}>
             {doctors.map((doctor) => (
-                <div key={doctor.id} className={styles.doctorCard}>
+                <div key={doctor._id} className={styles.doctorCard}>
                   <div className={styles.cardHeader}>
                     <div className={styles.doctorProfile}>
-                      <img src={doctor.image} alt={doctor.name} className={styles.doctorImage} />
+                      <img src={doctor.image_source} alt={doctor.name} className={styles.doctorImage} />
                       <div className={styles.doctorInfo}>
                         <h3 className={styles.doctorName}>{doctor.name}</h3>
-                        <p className={styles.doctorSpecialty}>{doctor.specialty}</p>
+                        <p className={styles.doctorSpecialty}>{doctor.speciality}</p>
                       </div>
                     </div>
                     <div className={styles.headerActions}>
@@ -317,28 +301,28 @@ export default function DoctorsPage() {
                   <div className={styles.details}>
                     <div className={styles.detail}>
                       <MapPin size={16} />
-                      {doctor.location}
+                      {doctor.address}
                     </div>
-                    <div className={styles.detail}>
+                    {/* <div className={styles.detail}>
                       <Clock size={16} />
                       {doctor.experience} experience
-                    </div>
+                    </div> */}
                     <div className={styles.detail}>
                       <Building size={16} />
-                      {doctor.hospital}
+                      {doctor.hospital_name}
                     </div>
                     <div className={styles.detail}>
                       <Mail size={16} />
-                      {doctor.email}
+                      {doctor.visiting_hours}
                     </div>
                     <div className={styles.detail}>
                       <Phone size={16} />
-                      {doctor.phone}
+                      {doctor.number}
                     </div>
                   </div>
-                  <div className={`${styles.status} ${styles[doctor.status]}`}>
+                  {/* <div className={`${styles.status} ${styles[doctor.status]}`}>
                     {doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1)}
-                  </div>
+                  </div> */}
                 </div>
             ))}
           </div>
@@ -374,11 +358,11 @@ export default function DoctorsPage() {
                       <input
                           id="specialty"
                           type="text"
-                          defaultValue={editingDoctor.specialty}
+                          defaultValue={editingDoctor.speciality}
                           required
                       />
                     </div>
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="experience">Experience</label>
                       <input
                           id="experience"
@@ -386,9 +370,9 @@ export default function DoctorsPage() {
                           defaultValue={editingDoctor.experience}
                           required
                       />
-                    </div>
+                    </div> */}
 
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="rating">Rating</label>
                       <input
                           id="rating"
@@ -399,9 +383,9 @@ export default function DoctorsPage() {
                           defaultValue={editingDoctor.rating}
                           required
                       />
-                    </div>
+                    </div> */}
 
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="availability">Availability</label>
                       <input
                           id="availability"
@@ -409,14 +393,14 @@ export default function DoctorsPage() {
                           defaultValue={editingDoctor.availability}
                           required
                       />
-                    </div>
+                    </div> */}
 
                     <div className={styles.formGroup}>
                       <label htmlFor="hospital">Hospital</label>
                       <input
                           id="hospital"
                           type="text"
-                          defaultValue={editingDoctor.hospital}
+                          defaultValue={editingDoctor.hospital_name}
                           required
                       />
                     </div>
@@ -426,12 +410,12 @@ export default function DoctorsPage() {
                       <input
                           id="location"
                           type="text"
-                          defaultValue={editingDoctor.location}
+                          defaultValue={editingDoctor.address}
                           required
                       />
                     </div>
 
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="email">Email</label>
                       <input
                           id="email"
@@ -439,19 +423,19 @@ export default function DoctorsPage() {
                           defaultValue={editingDoctor.email}
                           required
                       />
-                    </div>
+                    </div> */}
 
                     <div className={styles.formGroup}>
                       <label htmlFor="phone">Phone</label>
                       <input
                           id="phone"
                           type="tel"
-                          defaultValue={editingDoctor.phone}
+                          defaultValue={editingDoctor.number}
                           required
                       />
                     </div>
 
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="status">Status</label>
                       <select
                           id="status"
@@ -461,14 +445,14 @@ export default function DoctorsPage() {
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
-                    </div>
+                    </div> */}
 
                     <div className={styles.formGroup}>
                       <label htmlFor="education">Education (one per line)</label>
                       <textarea
                           id="education"
                           className={styles.textarea}
-                          defaultValue={editingDoctor.education.join('\n')}
+                          defaultValue={editingDoctor.degree}
                           required
                       />
                     </div>
@@ -478,12 +462,12 @@ export default function DoctorsPage() {
                       <textarea
                           id="specializations"
                           className={styles.textarea}
-                          defaultValue={editingDoctor.specializations.join('\n')}
+                          defaultValue={editingDoctor.speciality}
                           required
                       />
                     </div>
 
-                    <div className={styles.formGroup}>
+                    {/* <div className={styles.formGroup}>
                       <label htmlFor="languages">Languages (one per line)</label>
                       <textarea
                           id="languages"
@@ -491,7 +475,7 @@ export default function DoctorsPage() {
                           defaultValue={editingDoctor.languages.join('\n')}
                           required
                       />
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className={styles.modalActions}>
