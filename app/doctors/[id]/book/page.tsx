@@ -85,8 +85,7 @@ export default function BookAppointmentPage() {
         return
       }
       try {
-        const userId = localStorage.getItem("id")
-        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setUser(response.data)
@@ -169,7 +168,7 @@ export default function BookAppointmentPage() {
       // Simulated API call to book appointment
       await new Promise(resolve => setTimeout(resolve, 1000))
       // Example API call (uncomment and modify as needed):
-      /*
+
       await axios.post(
         "http://localhost:5000/api/appointments",
         {
@@ -182,7 +181,7 @@ export default function BookAppointmentPage() {
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       )
-      */
+
       router.push("/appointments")
     } catch (error) {
       console.error("Error booking appointment:", error)
