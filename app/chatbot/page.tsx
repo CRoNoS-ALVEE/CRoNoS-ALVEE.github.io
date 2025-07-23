@@ -27,8 +27,8 @@ export default function ChatbotPage() {
             }
 
             try {
-                const userId = localStorage.getItem("id")
-                const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+                //const userId = localStorage.getItem("id")
+                const response = await axios.get(`http://localhost:5000/api/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 setUser(response.data)
