@@ -69,9 +69,8 @@ export default function EditProfilePage() {
           throw new Error("No authentication token found")
         }
 
-        const userId = localStorage.getItem("id")
 
-        const response = await fetch(`http://localhost:5000/api/auth/profile/${userId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -197,8 +196,7 @@ export default function EditProfilePage() {
         family_medical_history: formData.family_medical_history
       }
 
-      const userId = localStorage.getItem("id")
-      const response = await fetch(`http://localhost:5000/api/auth/profile/edit/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/auth/profile/edit`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
