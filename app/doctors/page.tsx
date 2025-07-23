@@ -5,6 +5,7 @@ import Link from "next/link"
 import Navbar from "../components/Navbar/Navbar"
 import Footer from "../components/Footer/Footer"
 import { MapPin, Clock, Star, Phone, Mail, Building, Search, X, Calendar, Award, Stethoscope } from "lucide-react"
+import { CheckCircle } from "lucide-react"
 import styles from "./doctors.module.css"
 import { useRouter } from "next/navigation"
 import axios from "axios"
@@ -71,7 +72,6 @@ export default function DoctorsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [pagination, setPagination] = useState<Pagination>({
@@ -125,10 +125,6 @@ export default function DoctorsPage() {
   }, [currentPage])
 
   const handlePageChange = (page: number) => {
-    if (!loggedIn && page > 1) {
-      setShowLoginPrompt(true)
-      return
-    }
     setCurrentPage(page)
   }
 
@@ -441,58 +437,6 @@ export default function DoctorsPage() {
                       </Link>
                     </div>
                 )}
-              </div>
-            </div>
-        )}
-
-        {/* Login Prompt Modal */}
-        {showLoginPrompt && (
-            <div className={styles.modalOverlay} onClick={() => setShowLoginPrompt(false)}>
-              <div className={`${styles.modal} ${styles.loginModal}`} onClick={e => e.stopPropagation()}>
-                <button
-                    className={styles.closeButton}
-                    onClick={() => setShowLoginPrompt(false)}
-                >
-                  <X size={24} />
-                </button>
-
-                <div className={styles.modalHeader} style={{ textAlign: 'center' }}>
-                  <div className={styles.modalHeaderContent}>
-                    <h2>Sign In Required</h2>
-                    <p className={styles.specialty}>Access more doctors and features</p>
-                  </div>
-                </div>
-
-                <div className={styles.modalContent}>
-                  <div className={styles.infoSection} style={{ textAlign: 'center' }}>
-                    <h3>
-                      <Stethoscope size={20} />
-                      Why Sign In?
-                    </h3>
-                    <ul>
-                      <li>Browse all available doctors</li>
-                      <li>Book appointments directly</li>
-                      <li>Access personalized recommendations</li>
-                      <li>Save your favorite doctors</li>
-                      <li>Track your health journey</li>
-                    </ul>
-                  </div>
-
-                  <div className={styles.loginActions}>
-                    <Link
-                        href="/auth"
-                        className={styles.modalBookButton}
-                    >
-                      Sign In / Sign Up
-                    </Link>
-                    <button
-                        onClick={() => setShowLoginPrompt(false)}
-                        className={styles.cancelButton}
-                    >
-                      Continue Browsing Page 1
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
         )}
