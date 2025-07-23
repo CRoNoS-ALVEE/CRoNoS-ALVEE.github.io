@@ -32,14 +32,13 @@ export default function Home() {
     useEffect(() => {
         const fetchUserData = async () => {
             const token = localStorage.getItem("token");
-            console.log('From root',token);
+            // console.log('From root',token);
             if (!token) {
                 // router.push("/auth");
                 return;
             }
             try {
-                const userId = localStorage.getItem("id");
-                const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if(response){
@@ -67,16 +66,24 @@ export default function Home() {
     };
 
   return (
-    <div className={styles.app}>
-      <Navbar isLoggedIn={isLoggedIn} userImage={user?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"} onLogout={handleLogout} />
-      <main className={styles.main}>
-        <Hero />
-        <Features />
-        <Statistics />
-        <HowItWorks />
-        <Testimonials />
-      </main>
-      <Footer />
-    </div>
-  )
+  <div className={styles.app}>
+    <Navbar
+      isLoggedIn={isLoggedIn}
+      userImage={
+        user?.profile_pic ||
+        "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"
+      }
+      onLogout={handleLogout}
+    />
+    <main className={styles.main}>
+      <Hero isLoggedIn={isLoggedIn} /> {/* ✅ Pass isLoggedIn here */}
+      <Features />
+      <Statistics />
+      <HowItWorks />
+      <Testimonials />
+    </main>
+    <Footer />
+  </div>
+)
+
 }
