@@ -53,7 +53,10 @@ export default function DashboardContent() {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
-      console.log('Dashboard - Token:', token);
+      const userId = localStorage.getItem("id");
+      
+      console.log('Dashboard - Token:', token ? 'Present' : 'Missing');
+      console.log('Dashboard - User ID:', userId);
       
       if (!token) {
         console.log('Dashboard - No token found, redirecting to auth');
@@ -61,28 +64,28 @@ export default function DashboardContent() {
         return;
       }
       
+      if (!userId) {
+        console.log('Dashboard - No user ID found, redirecting to auth');
+        localStorage.removeItem("token");
+        router.push("/auth");
+        return;
+      }
+      
       try {
-        const userId = localStorage.getItem("id");
-        console.log('Dashboard - User ID:', userId);
-        
-        if (!userId) {
-          console.log('Dashboard - No user ID found');
-          setError("User ID not found. Please login again.");
-          localStorage.removeItem("token");
-          router.push("/auth");
-          return;
-        }
+        console.log('Dashboard - Making API call to:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/profile/${userId}`);
 
-        const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/profile/${userId}`, {
           headers: {Authorization: `Bearer ${token}`},
         });
         
-        console.log('Dashboard - API Response:', response.data);
+        console.log('Dashboard - API Response status:', response.status);
+        console.log('Dashboard - API Response data:', response.data);
         
         if (response.data) {
           setUser(response.data);
           setIsLoggedIn(true);
           setError("");
+          console.log('Dashboard - User data set successfully');
         } else {
           throw new Error("No user data received");
         }
@@ -90,6 +93,9 @@ export default function DashboardContent() {
         console.error("Dashboard - Failed to fetch user data:", err);
         
         if (axios.isAxiosError(err)) {
+          console.log('Dashboard - Axios error status:', err.response?.status);
+          console.log('Dashboard - Axios error data:', err.response?.data);
+          
           if (err.response?.status === 401) {
             console.log('Dashboard - Unauthorized, clearing token');
             localStorage.removeItem("token");
@@ -97,7 +103,10 @@ export default function DashboardContent() {
             router.push("/auth");
             return;
           } else if (err.response?.status === 404) {
-            setError("User not found. Please login again.");
+            setError(`User not found with ID: ${userId}. Please login again.`);
+            localStorage.removeItem("token");
+            localStorage.removeItem("id");
+            setTimeout(() => router.push("/auth"), 2000);
           } else {
             setError(`Failed to fetch user data: ${err.response?.data?.message || err.message}`);
           }

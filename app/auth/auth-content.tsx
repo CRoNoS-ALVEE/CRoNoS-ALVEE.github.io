@@ -117,16 +117,38 @@ export default function AuthContent() {
 
       if (result.status === 200) {
         console.log("Login successful")
-        console.log(result.data.user.id)
-        localStorage.setItem("id", result.data.user.id);
+        console.log("User data:", result.data.user)
+        console.log("User ID:", result.data.user.id)
+        
+        // Store user data in localStorage
+        localStorage.setItem("id", result.data.user.id)
         localStorage.setItem("token", result.data.user.token);
+        localStorage.setItem("userEmail", result.data.user.email)
+        localStorage.setItem("userName", result.data.user.name)
+        
+        console.log("Stored in localStorage:")
+        console.log("ID:", localStorage.getItem("id"))
+        console.log("Token:", localStorage.getItem("token"))
+        
         router.push("/dashboard")
       } else {
         setError("Login failed. Please check your credentials.")
       }
     } catch (err: unknown) {
       console.error("Login failed:", err)
-      setError("An error occurred. Please try again later.")
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          setError("Invalid email or password.")
+        } else if (err.response?.status === 404) {
+          setError("User not found. Please check your email or sign up.")
+        } else if (err.response?.data?.message) {
+          setError(err.response.data.message)
+        } else {
+          setError("Login failed. Please try again.")
+        }
+      } else {
+        setError("Network error. Please check your connection.")
+      }
     } finally {
       setLoading(false)
     }

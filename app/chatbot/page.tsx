@@ -20,6 +20,11 @@ export default function ChatbotPage() {
     useEffect(() => {
         const fetchUserData = async () => {
             const token = localStorage.getItem("token")
+            const userId = localStorage.getItem("id")
+            
+            console.log("Chatbot - Token:", token ? "Present" : "Missing")
+            console.log("Chatbot - User ID:", userId)
+            
             if (!token) {
                 setLoggedIn(false)
                 setLoading(false)
@@ -27,16 +32,22 @@ export default function ChatbotPage() {
             }
 
             try {
-                const userId = localStorage.getItem("id")
-                const response = await axios.get(`http://localhost:5000/api/auth/profile/${userId}`, {
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/profile/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
+                
+                console.log("Chatbot - API Response:", response.data)
                 setUser(response.data)
                 setLoggedIn(true)
             } catch (err) {
                 console.error("Failed to fetch user data:", err)
                 setLoggedIn(false)
-                // Don't redirect to auth, just show non-logged state
+                
+                if (axios.isAxiosError(err) && err.response?.status === 404) {
+                    console.log("Chatbot - User not found, clearing localStorage")
+                    localStorage.removeItem("token")
+                    localStorage.removeItem("id")
+                }
             } finally {
                 setLoading(false)
             }
