@@ -2,12 +2,12 @@
 
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import { useGoogleLogin } from "@react-oauth/google"
 import Image from "next/image"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faLock, faEnvelope } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faLock, faEnvelope, faTimes } from "@fortawesome/free-solid-svg-icons"
 import { faGoogle, faMicrosoft, faTwitter } from "@fortawesome/free-brands-svg-icons"
 import styles from "./auth.module.css"
 import { useRouter } from 'next/navigation'
@@ -21,7 +21,49 @@ export default function AuthContent() {
   const [name, setName] = useState("") // for sign-up form
   const [loading, setLoading] = useState(false) // to manage loading state
   const [error, setError] = useState("") // to display error messages
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotOtp, setForgotOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false)
+  const [signupOtpTimer, setSignupOtpTimer] = useState(60)
+  const [forgotOtpTimer, setForgotOtpTimer] = useState(60)
+  const [showForgotOtpField, setShowForgotOtpField] = useState(false)
+  const [signupTimerActive, setSignupTimerActive] = useState(false)
+  const [forgotTimerActive, setForgotTimerActive] = useState(false)
   const router = useRouter()
+
+  // Timer effect for signup OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (signupTimerActive && signupOtpTimer > 0) {
+      interval = setInterval(() => {
+        setSignupOtpTimer(prev => prev - 1)
+      }, 1000)
+    } else if (signupOtpTimer === 0) {
+      setSignupTimerActive(false)
+    }
+    return () => clearInterval(interval)
+  }, [signupTimerActive, signupOtpTimer])
+
+  // Timer effect for forgot password OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (forgotTimerActive && forgotOtpTimer > 0) {
+      interval = setInterval(() => {
+        setForgotOtpTimer(prev => prev - 1)
+      }, 1000)
+    } else if (forgotOtpTimer === 0) {
+      setForgotTimerActive(false)
+    }
+    return () => clearInterval(interval)
+  }, [forgotTimerActive, forgotOtpTimer])
 
   const handleSignUpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -62,13 +104,13 @@ export default function AuthContent() {
     setError("") // Clear previous errors
 
     try {
-      const result = await axios.post<{ user: { 
-        email: string,
-        id: string,
-        name: string,
-        profile_pic: string,
-        token: string
-      } }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+      const result = await axios.post<{ user: {
+          email: string,
+          id: string,
+          name: string,
+          profile_pic: string,
+          token: string
+        } }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
         email,
         password,
       })
@@ -111,7 +153,10 @@ export default function AuthContent() {
 
       if (result.status === 201) {
         console.log("Sign-up successful")
-        router.push("/dashboard")
+        setShowOtpModal(true)
+        setSignupOtpTimer(60)
+        setSignupTimerActive(true)
+        setLoading(false)
       } else {
         setError("Sign-up failed. Please try again.")
       }
@@ -119,127 +164,486 @@ export default function AuthContent() {
       console.error("Sign-up failed:", err)
       setError("An error occurred. Please try again later.")
     } finally {
-      setLoading(false)
+      if (!showOtpModal) {
+        setLoading(false)
+      }
     }
   }
 
+  const handleOtpVerification = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!otp) {
+      setError("Please enter the OTP.")
+      return
+    }
+
+    setOtpLoading(true)
+    setError("")
+
+    try {
+      // Simulate OTP verification API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // On successful verification
+      setShowOtpModal(false)
+      router.push("/dashboard")
+    } catch (err: unknown) {
+      console.error("OTP verification failed:", err)
+      setError("Invalid OTP. Please try again.")
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!forgotEmail) {
+      setError("Please enter your email address.")
+      return
+    }
+
+    setForgotPasswordLoading(true)
+    setError("")
+
+    try {
+      // Simulate sending OTP to email
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Show OTP field and start timer
+      setShowForgotOtpField(true)
+      setForgotOtpTimer(60)
+      setForgotTimerActive(true)
+    } catch (err: unknown) {
+      console.error("Forgot password failed:", err)
+      setError("Failed to send OTP. Please try again.")
+    } finally {
+      setForgotPasswordLoading(false)
+    }
+  }
+
+  const handleForgotOtpVerification = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!forgotOtp) {
+      setError("Please enter the OTP.")
+      return
+    }
+
+    setOtpLoading(true)
+    setError("")
+
+    try {
+      // Simulate OTP verification
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // On successful verification, show reset password modal
+      setShowForgotPasswordModal(false)
+      setShowResetPasswordModal(true)
+    } catch (err: unknown) {
+      console.error("OTP verification failed:", err)
+      setError("Invalid OTP. Please try again.")
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!newPassword || !confirmPassword) {
+      setError("Please fill in both password fields.")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long.")
+      return
+    }
+
+    setResetPasswordLoading(true)
+    setError("")
+
+    try {
+      // Simulate password reset API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // On successful reset
+      alert("Password reset successfully! Please login with your new password.")
+      setShowResetPasswordModal(false)
+      // Reset all states
+      setForgotEmail("")
+      setForgotOtp("")
+      setNewPassword("")
+      setConfirmPassword("")
+      setShowForgotOtpField(false)
+    } catch (err: unknown) {
+      console.error("Password reset failed:", err)
+      setError("Failed to reset password. Please try again.")
+    } finally {
+      setResetPasswordLoading(false)
+    }
+  }
+
+  const closeOtpModal = () => {
+    setShowOtpModal(false)
+    setOtp("")
+    setError("")
+    setSignupTimerActive(false)
+    setSignupOtpTimer(60)
+  }
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPasswordModal(false)
+    setForgotEmail("")
+    setForgotOtp("")
+    setShowForgotOtpField(false)
+    setForgotTimerActive(false)
+    setForgotOtpTimer(60)
+    setError("")
+  }
+
+  const closeResetPasswordModal = () => {
+    setShowResetPasswordModal(false)
+    setNewPassword("")
+    setConfirmPassword("")
+    setError("")
+  }
+
+  const handleResendSignupOtp = () => {
+    setSignupOtpTimer(60)
+    setSignupTimerActive(true)
+    // Here you would make API call to resend OTP
+    console.log("Resending signup OTP...")
+  }
+
+  const handleResendForgotOtp = () => {
+    setForgotOtpTimer(60)
+    setForgotTimerActive(true)
+    // Here you would make API call to resend OTP
+    console.log("Resending forgot password OTP...")
+  }
+
   return (
-      <div className={`${styles.container} ${isSignUpMode ? styles.signUpMode : ""}`}>
-        <div className={styles.formsContainer}>
-          <div className={styles.signinSignup}>
-            {/* Sign-in Form */}
-            <form className={`${styles.formWrapper} ${styles.signInForm}`} onSubmit={handleLogin}>
-              <h2 className={styles.title}>Sign in</h2>
-              <div className={styles.inputField}>
-                <i>
-                  <FontAwesomeIcon icon={faEnvelope} />
-                </i>
-                <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className={styles.inputField}>
-                <i>
-                  <FontAwesomeIcon icon={faLock} />
-                </i>
-                <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              {error && <p className={styles.error}>{error}</p>} {/* Error message */}
-              <input type="submit" value={loading ? "Logging in..." : "Login"} className={styles.btn} disabled={loading} />
-              <p className={styles.socialText}>Or Sign in with social platforms</p>
-              <div className={styles.socialMedia}>
-                <a href="#" className={styles.socialIcon} onClick={(e) => {
-                  e.preventDefault()
-                  login()
-                }}>
-                  <FontAwesomeIcon icon={faGoogle} />
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <FontAwesomeIcon icon={faMicrosoft} />
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <FontAwesomeIcon icon={faTwitter} />
-                </a>
-              </div>
-            </form>
+      <>
+        <div className={`${styles.container} ${isSignUpMode ? styles.signUpMode : ""}`}>
+          <div className={styles.formsContainer}>
+            <div className={styles.signinSignup}>
+              {/* Sign-in Form */}
+              <form className={`${styles.formWrapper} ${styles.signInForm}`} onSubmit={handleLogin}>
+                <h2 className={styles.title}>Sign in</h2>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faEnvelope} />
+                  </i>
+                  <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faLock} />
+                  </i>
+                  <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <div className={styles.forgotPassword}>
+                  <button
+                      type="button"
+                      className={styles.forgotPasswordLink}
+                      onClick={() => setShowForgotPasswordModal(true)}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                {error && <p className={styles.error}>{error}</p>} {/* Error message */}
+                <input type="submit" value={loading ? "Logging in..." : "Login"} className={styles.btn} disabled={loading} />
+                <p className={styles.socialText}>Or Sign in with social platforms</p>
+                <div className={styles.socialMedia}>
+                  <a href="#" className={styles.socialIcon} onClick={(e) => {
+                    e.preventDefault()
+                    login()
+                  }}>
+                    <FontAwesomeIcon icon={faGoogle} />
+                  </a>
+                  <a href="#" className={styles.socialIcon}>
+                    <FontAwesomeIcon icon={faMicrosoft} />
+                  </a>
+                  <a href="#" className={styles.socialIcon}>
+                    <FontAwesomeIcon icon={faTwitter} />
+                  </a>
+                </div>
+              </form>
 
-            {/* Sign-up Form */}
-            <form className={`${styles.formWrapper} ${styles.signUpForm}`} onSubmit={handleSignUp}>
-              <h2 className={styles.title}>Sign up</h2>
-              <div className={styles.inputField}>
-                <i>
-                  <FontAwesomeIcon icon={faUser} />
-                </i>
-                <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
+              {/* Sign-up Form */}
+              <form className={`${styles.formWrapper} ${styles.signUpForm}`} onSubmit={handleSignUp}>
+                <h2 className={styles.title}>Sign up</h2>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faUser} />
+                  </i>
+                  <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faEnvelope} />
+                  </i>
+                  <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className={styles.inputField}>
+                  <i>
+                    <FontAwesomeIcon icon={faLock} />
+                  </i>
+                  <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                {error && <p className={styles.error}>{error}</p>} {/* Error message */}
+                <input type="submit" value={loading ? "Signing up..." : "Sign up"} className={styles.btn} disabled={loading} />
+                <p className={styles.socialText}>Or Sign up with social platforms</p>
+                <div className={styles.socialMedia}>
+                  <a href="#" className={styles.socialIcon} onClick={(e) => {
+                    e.preventDefault()
+                    login()
+                  }}>
+                    <FontAwesomeIcon icon={faGoogle} />
+                  </a>
+                  <a href="#" className={styles.socialIcon}>
+                    <FontAwesomeIcon icon={faMicrosoft} />
+                  </a>
+                  <a href="#" className={styles.socialIcon}>
+                    <FontAwesomeIcon icon={faTwitter} />
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Panels */}
+          <div className={styles.panelsContainer}>
+            <div className={`${styles.panel} ${styles.leftPanel}`}>
+              <div className={styles.content}>
+                <h3>New here?</h3>
+                <p>Join SymptoSeek to access personalized health insights and connect with our AI-powered symptom analysis.</p>
+                <button className={`${styles.btn} ${styles.transparent}`} onClick={handleSignUpClick}>
+                  Sign up
+                </button>
               </div>
-              <div className={styles.inputField}>
-                <i>
-                  <FontAwesomeIcon icon={faEnvelope} />
-                </i>
-                <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/log-k7snnCr50CZaS0nowddBS8zQWSl4Dd.svg"
+                  className={styles.image}
+                  alt="Sign In illustration"
+                  width={400}
+                  height={400}
+                  priority
+              />
+            </div>
+            <div className={`${styles.panel} ${styles.rightPanel}`}>
+              <div className={styles.content}>
+                <h3>One of us?</h3>
+                <p>Welcome back! Sign in to continue your health journey with SymptoSeek.</p>
+                <button className={`${styles.btn} ${styles.transparent}`} onClick={handleSignInClick}>
+                  Sign in
+                </button>
               </div>
-              <div className={styles.inputField}>
-                <i>
-                  <FontAwesomeIcon icon={faLock} />
-                </i>
-                <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              {error && <p className={styles.error}>{error}</p>} {/* Error message */}
-              <input type="submit" value={loading ? "Signing up..." : "Sign up"} className={styles.btn} disabled={loading} />
-              <p className={styles.socialText}>Or Sign up with social platforms</p>
-              <div className={styles.socialMedia}>
-                <a href="#" className={styles.socialIcon} onClick={(e) => {
-                  e.preventDefault()
-                  login()
-                }}>
-                  <FontAwesomeIcon icon={faGoogle} />
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <FontAwesomeIcon icon={faMicrosoft} />
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <FontAwesomeIcon icon={faTwitter} />
-                </a>
-              </div>
-            </form>
+              <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/register-0OxCKpnMUkcjl19rsUa9ymhgx8h2dU.svg"
+                  className={styles.image}
+                  alt="Sign Up illustration"
+                  width={400}
+                  height={400}
+                  priority
+              />
+            </div>
           </div>
         </div>
 
-        {/* Panels */}
-        <div className={styles.panelsContainer}>
-          <div className={`${styles.panel} ${styles.leftPanel}`}>
-            <div className={styles.content}>
-              <h3>New here?</h3>
-              <p>Join SymptoSeek to access personalized health insights and connect with our AI-powered symptom analysis.</p>
-              <button className={`${styles.btn} ${styles.transparent}`} onClick={handleSignUpClick}>
-                Sign up
-              </button>
+        {/* OTP Verification Modal */}
+        {showOtpModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <button className={styles.closeButton} onClick={closeOtpModal}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+                <div className={styles.modalContent}>
+                  <h2 className={styles.modalTitle}>Verify Your Email</h2>
+                  <p className={styles.modalDescription}>
+                    We've sent a verification code to your email address. Please enter the code below to complete your registration.
+                  </p>
+                  <div className={styles.timerDisplay}>
+                    Time remaining: {Math.floor(signupOtpTimer / 60)}:{(signupOtpTimer % 60).toString().padStart(2, '0')}
+                  </div>
+                  <form onSubmit={handleOtpVerification}>
+                    <div className={styles.inputField}>
+                      <i>
+                        <FontAwesomeIcon icon={faLock} />
+                      </i>
+                      <input
+                          type="text"
+                          placeholder="Enter OTP"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          maxLength={6}
+                      />
+                    </div>
+                    {error && <p className={styles.error}>{error}</p>}
+                    <input
+                        type="submit"
+                        value={otpLoading ? "Verifying..." : "Verify OTP"}
+                        className={styles.btn}
+                        disabled={otpLoading}
+                    />
+                  </form>
+                  <div className={styles.resendSection}>
+                    <p>Didn't receive the code?</p>
+                    <button
+                        type="button"
+                        className={styles.resendButton}
+                        onClick={handleResendSignupOtp}
+                        disabled={signupTimerActive}
+                    >
+                      {signupTimerActive ? `Resend in ${signupOtpTimer}s` : "Resend OTP"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <Image
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/log-k7snnCr50CZaS0nowddBS8zQWSl4Dd.svg"
-                className={styles.image}
-                alt="Sign In illustration"
-                width={400}
-                height={400}
-                priority
-            />
-          </div>
-          <div className={`${styles.panel} ${styles.rightPanel}`}>
-            <div className={styles.content}>
-              <h3>One of us?</h3>
-              <p>Welcome back! Sign in to continue your health journey with SymptoSeek.</p>
-              <button className={`${styles.btn} ${styles.transparent}`} onClick={handleSignInClick}>
-                Sign in
-              </button>
+        )}
+
+        {/* Forgot Password Modal */}
+        {showForgotPasswordModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <button className={styles.closeButton} onClick={closeForgotPasswordModal}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+                <div className={styles.modalContent}>
+                  <h2 className={styles.modalTitle}>Reset Password</h2>
+                  <p className={styles.modalDescription}>
+                    Enter your email address and we'll send you an OTP to reset your password.
+                  </p>
+                  {!showForgotOtpField ? (
+                      <form onSubmit={handleForgotPassword}>
+                        <div className={styles.inputField}>
+                          <i>
+                            <FontAwesomeIcon icon={faEnvelope} />
+                          </i>
+                          <input
+                              type="email"
+                              placeholder="Enter your email"
+                              value={forgotEmail}
+                              onChange={(e) => setForgotEmail(e.target.value)}
+                          />
+                        </div>
+                        {error && <p className={styles.error}>{error}</p>}
+                        <input
+                            type="submit"
+                            value={forgotPasswordLoading ? "Sending..." : "Send OTP"}
+                            className={styles.btn}
+                            disabled={forgotPasswordLoading}
+                        />
+                      </form>
+                  ) : (
+                      <form onSubmit={handleForgotOtpVerification}>
+                        <div className={styles.inputField}>
+                          <i>
+                            <FontAwesomeIcon icon={faEnvelope} />
+                          </i>
+                          <input
+                              type="email"
+                              placeholder="Enter your email"
+                              value={forgotEmail}
+                              disabled
+                          />
+                        </div>
+                        <div className={styles.timerDisplay}>
+                          Time remaining: {Math.floor(forgotOtpTimer / 60)}:{(forgotOtpTimer % 60).toString().padStart(2, '0')}
+                        </div>
+                        <div className={styles.inputField}>
+                          <i>
+                            <FontAwesomeIcon icon={faLock} />
+                          </i>
+                          <input
+                              type="text"
+                              placeholder="Enter OTP"
+                              value={forgotOtp}
+                              onChange={(e) => setForgotOtp(e.target.value)}
+                              maxLength={6}
+                          />
+                        </div>
+                        {error && <p className={styles.error}>{error}</p>}
+                        <input
+                            type="submit"
+                            value={otpLoading ? "Verifying..." : "Verify OTP"}
+                            className={styles.btn}
+                            disabled={otpLoading}
+                        />
+                        <div className={styles.resendSection}>
+                          <p>Didn't receive the code?</p>
+                          <button
+                              type="button"
+                              className={styles.resendButton}
+                              onClick={handleResendForgotOtp}
+                              disabled={forgotTimerActive}
+                          >
+                            {forgotTimerActive ? `Resend in ${forgotOtpTimer}s` : "Resend OTP"}
+                          </button>
+                        </div>
+                      </form>
+                  )}
+                </div>
+              </div>
             </div>
-            <Image
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/register-0OxCKpnMUkcjl19rsUa9ymhgx8h2dU.svg"
-                className={styles.image}
-                alt="Sign Up illustration"
-                width={400}
-                height={400}
-                priority
-            />
-          </div>
-        </div>
-      </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {showResetPasswordModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <button className={styles.closeButton} onClick={closeResetPasswordModal}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+                <div className={styles.modalContent}>
+                  <h2 className={styles.modalTitle}>Set New Password</h2>
+                  <p className={styles.modalDescription}>
+                    Enter your new password below.
+                  </p>
+                  <form onSubmit={handleResetPassword}>
+                    <div className={styles.inputField}>
+                      <i>
+                        <FontAwesomeIcon icon={faLock} />
+                      </i>
+                      <input
+                          type="password"
+                          placeholder="New Password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.inputField}>
+                      <i>
+                        <FontAwesomeIcon icon={faLock} />
+                      </i>
+                      <input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                    {error && <p className={styles.error}>{error}</p>}
+                    <input
+                        type="submit"
+                        value={resetPasswordLoading ? "Resetting..." : "Reset Password"}
+                        className={styles.btn}
+                        disabled={resetPasswordLoading}
+                    />
+                  </form>
+                </div>
+              </div>
+            </div>
+        )}
+      </>
   )
 }
