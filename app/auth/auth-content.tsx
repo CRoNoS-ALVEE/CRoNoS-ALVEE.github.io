@@ -39,6 +39,8 @@ export default function AuthContent() {
   const [forgotTimerActive, setForgotTimerActive] = useState(false)
   const [signupEmail, setSignupEmail] = useState("") // Store email for OTP verification
   const router = useRouter()
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorModalMessage, setErrorModalMessage] = useState("")
 
   // Timer effect for signup OTP
   useEffect(() => {
@@ -76,6 +78,17 @@ export default function AuthContent() {
     e.preventDefault()
     setIsSignUpMode(false)
     setError("") // clear error when switching modes
+  }
+
+  const showErrorPopup = (message: string) => {
+    setErrorModalMessage(message)
+    setShowErrorModal(true)
+    setError("") // Clear inline error
+  }
+
+  const closeErrorModal = () => {
+    setShowErrorModal(false)
+    setErrorModalMessage("")
   }
 
   const login = useGoogleLogin({
@@ -129,24 +142,24 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("Login failed:", err)
-      
+
       // Handle specific error cases
       if (err.response?.status === 404) {
-        setError("User doesn't exist. Please check your email or sign up.")
+        showErrorPopup("User doesn't exist. Please check your email or sign up.")
       } else if (err.response?.status === 401) {
         const errorMessage = err.response?.data?.message?.toLowerCase() || ""
-        
+
         if (errorMessage.includes("email")) {
-          setError("Incorrect email address. Please try again.")
+          showErrorPopup("Incorrect email address. Please try again.")
         } else if (errorMessage.includes("password")) {
-          setError("Incorrect password. Please try again.")
+          showErrorPopup("Incorrect password. Please try again.")
         } else {
-          setError("Incorrect credentials. Please check your email and password.")
+          showErrorPopup("Incorrect credentials. Please check your email and password.")
         }
       } else if (err.response?.data?.message) {
-        setError(err.response.data.message)
+        showErrorPopup(err.response.data.message)
       } else {
-        setError("An error occurred. Please try again later.")
+        showErrorPopup("An error occurred. Please try again later.")
       }
     } finally {
       setLoading(false)
@@ -197,22 +210,22 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("Sign-up failed:", err)
-      
+
       // Handle specific error cases
       if (err.response?.status === 409 || err.response?.status === 400) {
         const errorMessage = err.response?.data?.message?.toLowerCase() || ""
-        
+
         if (errorMessage.includes("email") && (errorMessage.includes("exist") || errorMessage.includes("already") || errorMessage.includes("taken"))) {
-          setError("User already exists with this email. Please try logging in or use a different email.")
+          showErrorPopup("User already exists with this email. Please try logging in or use a different email.")
         } else if (errorMessage.includes("duplicate") || errorMessage.includes("unique")) {
-          setError("User already exists with this email. Please try logging in or use a different email.")
+          showErrorPopup("User already exists with this email. Please try logging in or use a different email.")
         } else {
-          setError(err.response.data.message || "Sign-up failed. Please try again.")
+          showErrorPopup(err.response.data.message || "Sign-up failed. Please try again.")
         }
       } else if (err.response?.data?.message) {
-        setError(err.response.data.message)
+        showErrorPopup(err.response.data.message)
       } else {
-        setError("An error occurred. Please try again later.")
+        showErrorPopup("An error occurred. Please try again later.")
       }
     } finally {
       if (!showOtpModal) {
@@ -257,11 +270,11 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("OTP verification failed:", err)
-      
+
       // Handle specific OTP error cases
       if (err.response?.status === 400) {
         const errorMessage = err.response?.data?.message?.toLowerCase() || ""
-        
+
         if (errorMessage.includes("expired")) {
           setError("OTP has expired. Please request a new one.")
         } else if (errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
@@ -404,7 +417,7 @@ export default function AuthContent() {
   const handleResendSignupOtp = async () => {
     try {
       setError("") // Clear any existing errors
-      
+
       const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/resend-otp`, {
         email: signupEmail,
       })
@@ -420,7 +433,7 @@ export default function AuthContent() {
       }
     } catch (err: any) {
       console.error("Failed to resend OTP:", err)
-      
+
       // Handle resend OTP errors
       if (err.response?.status === 429) {
         setError("Too many requests. Please wait before requesting another OTP.")
@@ -470,7 +483,6 @@ export default function AuthContent() {
                     Forgot Password?
                   </button>
                 </div>
-                {error && <p className={styles.error}>{error}</p>} {/* Error message */}
                 <input type="submit" value={loading ? "Logging in..." : "Login"} className={styles.btn} disabled={loading} />
                 <p className={styles.socialText}>Or Sign in with social platforms</p>
                 <div className={styles.socialMedia}>
@@ -510,7 +522,6 @@ export default function AuthContent() {
                   </i>
                   <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
-                {error && <p className={styles.error}>{error}</p>} {/* Error message */}
                 <input type="submit" value={loading ? "Signing up..." : "Sign up"} className={styles.btn} disabled={loading} />
                 <p className={styles.socialText}>Or Sign up with social platforms</p>
                 <div className={styles.socialMedia}>
@@ -751,6 +762,30 @@ export default function AuthContent() {
                         disabled={resetPasswordLoading}
                     />
                   </form>
+                </div>
+              </div>
+            </div>
+        )}
+
+        {/* Error Modal */}
+        {showErrorModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <button className={styles.closeButton} onClick={closeErrorModal}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+                <div className={styles.modalContent}>
+                  <h2 className={styles.modalTitle}>Authentication Error</h2>
+                  <p className={styles.modalDescription}>
+                    {errorModalMessage}
+                  </p>
+                  <button
+                      type="button"
+                      className={styles.btn}
+                      onClick={closeErrorModal}
+                  >
+                    Try Again
+                  </button>
                 </div>
               </div>
             </div>
