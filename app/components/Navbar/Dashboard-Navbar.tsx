@@ -86,7 +86,7 @@ export default function Navbar({ isLoggedIn, userImage, onLogout }: NavbarProps)
                             <button onClick={toggleProfile} className={styles.profileButton}>
                                 <div className={styles.profilePicture}>
                                     <Image
-                                        src={userImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100"}
+                                        src={userImage || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"}
                                         alt="Profile"
                                         width={32}
                                         height={32}
