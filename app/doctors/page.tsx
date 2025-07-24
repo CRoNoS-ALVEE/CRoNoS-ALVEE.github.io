@@ -431,11 +431,12 @@ export default function DoctorsPage() {
                       <p>{selectedDoctor.visiting_hours}</p>
                     </div>
 
-                    <div className={styles.contactInfo}>
-                      <div className={styles.contactItem}>
+                    <div className={styles.infoSection}>
+                      <h3>
                         <Building size={20} />
-                        <span>{selectedDoctor.hospital_name}</span>
-                      </div>
+                        Chamber
+                      </h3>
+                      <p>{selectedDoctor.hospital_name}</p>
                     </div>
                   </div>
                 </div>
