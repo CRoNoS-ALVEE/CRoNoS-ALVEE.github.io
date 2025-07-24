@@ -302,20 +302,47 @@ export default function AuthContent() {
       return
     }
 
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(forgotEmail)) {
+      setError("Please enter a valid email address.")
+      return
+    }
+
     setForgotPasswordLoading(true)
     setError("")
 
     try {
-      // Simulate sending OTP to email
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/forgot-password`, {
+        email: forgotEmail,
+      })
 
-      // Show OTP field and start timer
-      setShowForgotOtpField(true)
-      setForgotOtpTimer(60)
-      setForgotTimerActive(true)
-    } catch (err: unknown) {
+      if (result.status === 200) {
+        // Show OTP field and start timer
+        setShowForgotOtpField(true)
+        setForgotOtpTimer(900) // 15 minutes = 900 seconds
+        setForgotTimerActive(true)
+        console.log("Password reset code sent successfully")
+      }
+    } catch (err: any) {
       console.error("Forgot password failed:", err)
-      setError("Failed to send OTP. Please try again.")
+      
+      // Handle specific error cases
+      if (err.response?.status === 404) {
+        setError("User not found. Please check your email address.")
+      } else if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("verify") || errorMessage.includes("email first")) {
+          setError("Please verify your email first before resetting password.")
+        } else {
+          setError(err.response.data.message || "Please enter a valid email address.")
+        }
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("Failed to send reset code. Please try again.")
+      }
     } finally {
       setForgotPasswordLoading(false)
     }
@@ -329,19 +356,48 @@ export default function AuthContent() {
       return
     }
 
+    if (forgotOtp.length !== 6) {
+      setError("Reset code must be 6 digits long.")
+      return
+    }
+
     setOtpLoading(true)
     setError("")
 
     try {
-      // Simulate OTP verification
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-reset-token`, {
+        email: forgotEmail,
+        resetToken: forgotOtp,
+      })
 
-      // On successful verification, show reset password modal
-      setShowForgotPasswordModal(false)
-      setShowResetPasswordModal(true)
-    } catch (err: unknown) {
+      if (result.status === 200) {
+        // On successful verification, show reset password modal
+        setShowForgotPasswordModal(false)
+        setShowResetPasswordModal(true)
+        setForgotTimerActive(false)
+        console.log("Reset token verified successfully")
+      }
+    } catch (err: any) {
       console.error("OTP verification failed:", err)
-      setError("Invalid OTP. Please try again.")
+      
+      // Handle specific error cases
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("expired")) {
+          setError("Reset code has expired. Please request a new one.")
+        } else if (errorMessage.includes("invalid") || errorMessage.includes("token")) {
+          setError("Invalid reset code. Please check and try again.")
+        } else {
+          setError(err.response.data.message || "Invalid reset code. Please try again.")
+        }
+      } else if (err.response?.status === 404) {
+        setError("User not found. Please check your email address.")
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("Invalid reset code. Please try again.")
+      }
     } finally {
       setOtpLoading(false)
     }
@@ -369,21 +425,48 @@ export default function AuthContent() {
     setError("")
 
     try {
-      // Simulate password reset API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/reset-password`, {
+        email: forgotEmail,
+        resetToken: forgotOtp,
+        newPassword: newPassword,
+      })
 
-      // On successful reset
-      alert("Password reset successfully! Please login with your new password.")
-      setShowResetPasswordModal(false)
-      // Reset all states
-      setForgotEmail("")
-      setForgotOtp("")
-      setNewPassword("")
-      setConfirmPassword("")
-      setShowForgotOtpField(false)
-    } catch (err: unknown) {
+      if (result.status === 200) {
+        // On successful reset
+        alert("Password reset successfully! Please login with your new password.")
+        setShowResetPasswordModal(false)
+        // Reset all states
+        setForgotEmail("")
+        setForgotOtp("")
+        setNewPassword("")
+        setConfirmPassword("")
+        setShowForgotOtpField(false)
+        setForgotTimerActive(false)
+        console.log("Password reset successful")
+      }
+    } catch (err: any) {
       console.error("Password reset failed:", err)
-      setError("Failed to reset password. Please try again.")
+      
+      // Handle specific error cases
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message?.toLowerCase() || ""
+        
+        if (errorMessage.includes("expired") || errorMessage.includes("token")) {
+          setError("Reset code has expired or is invalid. Please request a new reset code.")
+        } else if (errorMessage.includes("password") && errorMessage.includes("6")) {
+          setError("Password must be at least 6 characters long.")
+        } else if (errorMessage.includes("verify") || errorMessage.includes("email")) {
+          setError("Please verify your email first.")
+        } else {
+          setError(err.response.data.message || "Failed to reset password. Please try again.")
+        }
+      } else if (err.response?.status === 404) {
+        setError("User not found. Please check your email address.")
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError("Failed to reset password. Please try again.")
+      }
     } finally {
       setResetPasswordLoading(false)
     }
@@ -448,10 +531,11 @@ export default function AuthContent() {
   }
 
   const handleResendForgotOtp = () => {
-    setForgotOtpTimer(60)
+    setForgotOtpTimer(900) // 15 minutes = 900 seconds
     setForgotTimerActive(true)
-    // Here you would make API call to resend OTP
-    console.log("Resending forgot password OTP...")
+    
+    // Make API call to resend reset code
+    handleForgotPassword({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>)
   }
 
   return (
@@ -680,7 +764,7 @@ export default function AuthContent() {
                           />
                         </div>
                         <div className={styles.timerDisplay}>
-                          Time remaining: {Math.floor(forgotOtpTimer / 60)}:{(forgotOtpTimer % 60).toString().padStart(2, '0')}
+                          Code expires in: {Math.floor(forgotOtpTimer / 60)}:{(forgotOtpTimer % 60).toString().padStart(2, '0')}
                         </div>
                         <div className={styles.inputField}>
                           <i>
