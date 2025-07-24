@@ -31,19 +31,6 @@ interface Reminder {
   completed: boolean;
 }
 
-interface Appointment {
-  _id: string;
-  doctors_id: {
-    name: string;
-    speciality: string;
-    hospital_name: string;
-  };
-  date: string;
-  reason: string;
-  status: string;
-  createdAt: string;
-}
-
 interface ApiReminder {
   _id: string;
   user: string;
@@ -76,7 +63,6 @@ type ReminderFormData = Omit<Reminder, "id" | "completed">;
 export default function RemindersPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeReminders, setActiveReminders] = useState<Reminder[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newReminder, setNewReminder] = useState<ReminderFormData>({
     title: "",
@@ -96,8 +82,7 @@ export default function RemindersPage() {
           return;
         }
 
-        // Fetch reminders
-        const remindersResponse = await axios.get<ApiReminder[]>(
+        const response = await axios.get<ApiReminder[]>(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reminder`,
           {
             headers: {
@@ -107,10 +92,12 @@ export default function RemindersPage() {
           }
         );
 
-        const remindersData = remindersResponse.data;
+        // Axios throws for non-2xx responses, so no need to check response.ok
+
+        const data = response.data;
 
         // Map API response to match our Reminder interface
-        const mappedReminders: Reminder[] = remindersData.map((item: any) => ({
+        const mappedReminders: Reminder[] = data.map((item: any) => ({
           id: item._id,
           title: item.title,
           time: item.time,
@@ -119,22 +106,11 @@ export default function RemindersPage() {
           completed: item.isCompleted,
         }));
 
+        // console.log("Mapped Reminders:", mappedReminders);
+
         setActiveReminders(mappedReminders);
-
-        // Fetch appointments
-        const appointmentsResponse = await axios.get<Appointment[]>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/appointments/my-appointments`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        setAppointments(appointmentsResponse.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching reminders:", error);
       }
     };
 
@@ -197,26 +173,6 @@ export default function RemindersPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return "#f59e0b"; // yellow
-      case "confirmed":
-        return "#10b981"; // green
-      case "cancelled":
-        return "#ef4444"; // red
-      default:
-        return "#6b7280"; // gray
-    }
-  };
-
-  const formatAppointmentDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-  };
   return (
     <div className={styles.container}>
       <button
@@ -287,70 +243,6 @@ export default function RemindersPage() {
         </div>
 
         <div className={styles.reminders}>
-          {/* Appointments Section */}
-          {appointments.length > 0 && (
-            <>
-              <h2 style={{ gridColumn: '1 / -1', fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
-                My Appointments
-              </h2>
-              {appointments.map((appointment) => {
-                const { date, time } = formatAppointmentDate(appointment.date);
-                return (
-                  <div key={appointment._id} className={styles.reminderCard}>
-                    <div className={styles.reminderHeader}>
-                      <div className={styles.reminderIcon}>
-                        <Calendar size={20} />
-                      </div>
-                      <div className={styles.reminderTime}>
-                        <Clock size={16} />
-                        {time} on {date}
-                      </div>
-                    </div>
-
-                    <div className={styles.reminderContent}>
-                      <h3>Appointment with Dr. {appointment.doctors_id?.name || 'Unknown'}</h3>
-                      <p>
-                        <strong>Specialty:</strong> {appointment.doctors_id?.speciality || 'N/A'}<br/>
-                        <strong>Hospital:</strong> {appointment.doctors_id?.hospital_name || 'N/A'}<br/>
-                        <strong>Reason:</strong> {appointment.reason || 'General consultation'}
-                      </p>
-                    </div>
-
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.5rem',
-                      padding: '0.5rem 1rem',
-                      backgroundColor: getStatusColor(appointment.status) + '20',
-                      borderRadius: '0.5rem',
-                      border: `1px solid ${getStatusColor(appointment.status)}40`
-                    }}>
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: getStatusColor(appointment.status)
-                      }}></div>
-                      <span style={{ 
-                        color: getStatusColor(appointment.status),
-                        fontWeight: '500',
-                        fontSize: '0.875rem',
-                        textTransform: 'capitalize'
-                      }}>
-                        {appointment.status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              <h2 style={{ gridColumn: '1 / -1', fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem', marginTop: '2rem' }}>
-                My Reminders
-              </h2>
-            </>
-          )}
-
-          {/* Regular Reminders */}
           {activeReminders.map((reminder) => (
             <div
               key={reminder.id}
