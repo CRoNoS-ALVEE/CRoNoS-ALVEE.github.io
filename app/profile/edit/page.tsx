@@ -301,12 +301,32 @@ export default function EditProfilePage() {
         }),
       })
 
+      const responseText = await response.text()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to change password")
+        let errorMessage = "Failed to change password"
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorMessage
+        } catch (parseError) {
+          // If response is HTML (like error page), extract meaningful message
+          if (responseText.includes("<!DOCTYPE")) {
+            errorMessage = "Server error occurred. Please try again later."
+          } else {
+            errorMessage = responseText || errorMessage
+          }
+        }
+        throw new Error(errorMessage)
       }
 
-      const result = await response.json()
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        // If successful response but not JSON, treat as success
+        result = { message: "Password changed successfully" }
+      }
+
       console.log("Password changed successfully:", result)
 
       // Reset password form
@@ -837,23 +857,32 @@ export default function EditProfilePage() {
             )}
 
             <div className={styles.actions}>
-              <Link href="/profile" className={`${styles.button} ${styles.secondaryButton}`} passHref>
-                Cancel
-              </Link>
-              <button
-                  type="submit"
-                  className={`${styles.button} ${styles.primaryButton}`}
-                  disabled={isLoading}
-              >
-                {isLoading ? (
-                    "Updating..."
-                ) : (
-                    <>
-                      <Save size={16} />
-                      Update
-                    </>
-                )}
-              </button>
+              {activeTab !== "security" && (
+                  <Link href="/profile" className={`${styles.button} ${styles.secondaryButton}`} passHref>
+                    Cancel
+                  </Link>
+              )}
+              {activeTab !== "security" && (
+                  <button
+                      type="submit"
+                      className={`${styles.button} ${styles.primaryButton}`}
+                      disabled={isLoading}
+                  >
+                    {isLoading ? (
+                        "Updating..."
+                    ) : (
+                        <>
+                          <Save size={16} />
+                          Update
+                        </>
+                    )}
+                  </button>
+              )}
+              {activeTab === "security" && (
+                  <Link href="/profile" className={`${styles.button} ${styles.secondaryButton}`} passHref>
+                    Cancel
+                  </Link>
+              )}
             </div>
           </form>
         </main>
