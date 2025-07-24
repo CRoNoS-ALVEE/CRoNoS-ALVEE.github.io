@@ -21,54 +21,22 @@ import {
 } from "lucide-react"
 import styles from "./appointments.module.css"
 import router from "next/router"
+import axios from "axios"
 
 interface Appointment {
-  id: number
-  patientName: string
-  patientImage: string
-  type: string
-  date: string
-  time: string
-  location: string
-  doctor: string
-  status: "scheduled" | "completed" | "cancelled"
-}
-
-const appointments: Appointment[] = [
-  {
-    id: 1,
-    patientName: "John Smith",
-    patientImage: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100",
-    type: "General Check-up",
-    date: "2024-03-20",
-    time: "09:00 AM",
-    location: "Main Clinic, Room 102",
-    doctor: "Dr. Sarah Johnson",
-    status: "scheduled"
-  },
-  {
-    id: 2,
-    patientName: "Emma Wilson",
-    patientImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
-    type: "Dental Consultation",
-    date: "2024-03-20",
-    time: "10:30 AM",
-    location: "Dental Wing, Room 205",
-    doctor: "Dr. Michael Chen",
-    status: "completed"
-  },
-  {
-    id: 3,
-    patientName: "David Brown",
-    patientImage: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100",
-    type: "Follow-up",
-    date: "2024-03-21",
-    time: "02:00 PM",
-    location: "Main Clinic, Room 105",
-    doctor: "Dr. Emily Rodriguez",
-    status: "cancelled"
+  _id: string
+  userId: {
+    name: string
+    email: string
+    profile_pic?: string
   }
-]
+  doctors_id: {
+    name: string
+    speciality: string
+    hospital_name: string
+    address: string
+  }
+  date: string
 
 export default function AppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -171,15 +139,6 @@ export default function AppointmentsPage() {
 
             <div className={styles.filterGroup}>
               <Filter size={20} />
-              <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-              >
-                <option value="">All Types</option>
-                {types.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
 
               <select
                   value={selectedStatus}
@@ -195,58 +154,99 @@ export default function AppointmentsPage() {
             </div>
           </div>
 
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+              Loading appointments...
+            </div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>
+              {error}
+            </div>
+          ) : (
           <div className={styles.appointmentsGrid}>
             {filteredAppointments.map(appointment => (
-                <div key={appointment.id} className={styles.appointmentCard}>
+                <div key={appointment._id} className={styles.appointmentCard}>
                   <div className={styles.cardHeader}>
                     <div className={styles.patientInfo}>
                       <img
-                          src={appointment.patientImage}
-                          alt={appointment.patientName}
+                          src={appointment.userId?.profile_pic || "https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740"}
+                          alt={appointment.userId?.name || "Patient"}
                           className={styles.avatar}
                       />
                       <div>
-                        <div className={styles.patientName}>{appointment.patientName}</div>
-                        <div className={styles.appointmentType}>{appointment.type}</div>
+                        <div className={styles.patientName}>{appointment.userId?.name || "Unknown Patient"}</div>
+                        <div className={styles.appointmentType}>{appointment.reason || "General consultation"}</div>
                       </div>
                     </div>
-                    <div className={`${styles.status} ${styles[appointment.status]}`}>
+                    <div className={`${styles.status} ${styles[appointment.status.toLowerCase()]}`}>
                       {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                     </div>
                   </div>
 
                   <div className={styles.details}>
+                    {(() => {
+                      const { date, time } = formatAppointmentDate(appointment.date);
+                      return (
+                        <>
                     <div className={styles.detail}>
                       <Calendar size={16} />
-                      <span>{new Date(appointment.date).toLocaleDateString()}</span>
+                          <span>{date}</span>
                     </div>
                     <div className={styles.detail}>
                       <Clock size={16} />
-                      <span>{appointment.time}</span>
+                          <span>{time}</span>
                     </div>
+                        </>
+                      );
+                    })()}
                     <div className={styles.detail}>
                       <MapPin size={16} />
-                      <span>{appointment.location}</span>
+                      <span>{appointment.doctors_id?.hospital_name || 'N/A'} - {appointment.doctors_id?.address || 'N/A'}</span>
                     </div>
                     <div className={styles.detail}>
                       <User size={16} />
-                      <span>{appointment.doctor}</span>
+                      <span>Dr. {appointment.doctors_id?.name || 'Unknown'}</span>
                     </div>
                   </div>
 
                   <div className={styles.actions}>
-                    <button className={`${styles.actionButton} ${styles.editButton}`}>
-                      <Edit size={16} />
-                      Edit
-                    </button>
-                    <button className={`${styles.actionButton} ${styles.cancelButton}`}>
-                      <X size={16} />
-                      Cancel
-                    </button>
+                    {appointment.status === "Pending" && (
+                      <>
+                        <button 
+                          className={`${styles.actionButton} ${styles.confirmButton}`}
+                          onClick={() => updateAppointmentStatus(appointment._id, "Confirmed")}
+                        >
+                          <Calendar size={16} />
+                          Confirm
+                        </button>
+                        <button 
+                          className={`${styles.actionButton} ${styles.cancelButton}`}
+                          onClick={() => updateAppointmentStatus(appointment._id, "Cancelled")}
+                        >
+                          <X size={16} />
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {appointment.status === "Confirmed" && (
+                      <button 
+                        className={`${styles.actionButton} ${styles.cancelButton}`}
+                        onClick={() => updateAppointmentStatus(appointment._id, "Cancelled")}
+                      >
+                        <X size={16} />
+                        Cancel
+                      </button>
+                    )}
+                    {appointment.status === "Cancelled" && (
+                      <div style={{ color: '#6b7280', fontSize: '0.875rem', textAlign: 'center', padding: '0.5rem' }}>
+                        Appointment Cancelled
+                      </div>
+                    )}
                   </div>
                 </div>
             ))}
           </div>
+          )}
         </main>
       </div>
   )
