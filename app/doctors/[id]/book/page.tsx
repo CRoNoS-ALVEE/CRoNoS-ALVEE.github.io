@@ -165,51 +165,27 @@ export default function BookAppointmentPage() {
     setSubmitLoading(true)
 
     try {
-      const token = localStorage.getItem("token")
-      if (!token) {
-        router.push("/auth")
-        return
-      }
+      // Simulated API call to book appointment
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Example API call (uncomment and modify as needed):
 
-      // Combine date and time into a single datetime
-      const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`)
-
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/appointments`,
+      await axios.post(
+        "http://localhost:5000/api/appointments",
         {
-          doctors_id: doctor?._id,
-          date: appointmentDateTime.toISOString(),
-          reason: `${appointmentType}: ${notes}`.trim()
+          doctorId: doctor?._id,
+          userId: user?._id,
+          date: selectedDate,
+          time: selectedTime,
+          type: appointmentType,
+          notes,
         },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       )
 
-      if (response.status === 201) {
-        alert("Appointment booked successfully! You can view it in your reminders.")
-        router.push("/reminders")
-      }
+      router.push("/appointments")
     } catch (error) {
       console.error("Error booking appointment:", error)
-      
-      if (error.response?.status === 400) {
-        const errorMessage = error.response?.data?.message || ""
-        if (errorMessage.includes("future")) {
-          setError("Please select a future date for your appointment.")
-        } else if (errorMessage.includes("already has an appointment")) {
-          setError("This time slot is already booked. Please select a different time.")
-        } else {
-          setError(errorMessage || "Invalid appointment details.")
-        }
-      } else if (error.response?.data?.message) {
-        setError(error.response.data.message)
-      } else {
-        setError("Failed to book appointment. Please try again.")
-      }
+      setError("Failed to book appointment.")
     } finally {
       setSubmitLoading(false)
     }
