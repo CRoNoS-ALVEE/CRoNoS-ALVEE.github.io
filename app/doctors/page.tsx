@@ -381,14 +381,6 @@ export default function DoctorsPage() {
         {selectedDoctor && (
             <div className={styles.modalOverlay} onClick={() => setSelectedDoctor(null)}>
               <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                <button
-                    className={styles.closeButton}
-                    onClick={() => setSelectedDoctor(null)}
-                    disabled={isFiltering}
-                >
-                  <X size={24} />
-                </button>
-
                 <div className={`${styles.modalContent} ${!loggedIn ? styles.blurred : ''}`}>
                   <div className={styles.modalHeader}>
                     <img
@@ -399,6 +391,16 @@ export default function DoctorsPage() {
                     <div className={styles.modalHeaderContent}>
                       <h2>{selectedDoctor.name}</h2>
                       <p className={styles.specialty}>{selectedDoctor.speciality}</p>
+                      <div className={styles.locationPhoneHeader}>
+                        <div className={styles.headerInfo}>
+                          <MapPin size={16} />
+                          <span>{selectedDoctor.address}</span>
+                        </div>
+                        <div className={styles.headerInfo}>
+                          <Phone size={16} />
+                          <span>{selectedDoctor.number}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -434,14 +436,6 @@ export default function DoctorsPage() {
                         <Building size={20} />
                         <span>{selectedDoctor.hospital_name}</span>
                       </div>
-                      <div className={styles.contactItem}>
-                        <MapPin size={20} />
-                        <span>{selectedDoctor.address}</span>
-                      </div>
-                      <div className={styles.contactItem}>
-                        <Phone size={20} />
-                        <span>{selectedDoctor.number}</span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -460,6 +454,12 @@ export default function DoctorsPage() {
 
                 {loggedIn && (
                     <div className={styles.modalActions}>
+                      <button
+                          className={styles.modalCloseButton}
+                          onClick={() => setSelectedDoctor(null)}
+                      >
+                        Close
+                      </button>
                       <Link
                           href={`/doctors/${selectedDoctor._id}/book`}
                           className={styles.modalBookButton}
