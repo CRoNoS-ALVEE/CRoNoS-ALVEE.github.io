@@ -1,8 +1,9 @@
 "use client"
 
-import {type ReactNode, useState} from 'react'
+import {type ReactNode, useState, useEffect} from 'react'
 import { Calendar, Clock, Plus, LayoutDashboard, FileText, Bell, User, Settings, LogOut, Stethoscope, Menu, X } from "lucide-react"
 import Link from "next/link"
+import axios from "axios"
 import Navbar from "../components/Navbar/Navbar"
 import Footer from "../components/Footer/Footer"
 import styles from "./plans.module.css"
@@ -15,6 +16,7 @@ interface NavItemProps {
   onClick?: () => void;
 }
 interface User {
+  _id?: string;
   profile_pic?: string;
   name?: string;
 }
@@ -81,6 +83,8 @@ export default function PlansPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activeReminders, setActiveReminders] = useState(reminders)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [newPlan, setNewPlan] = useState({
     title: "",
     date: "",
@@ -100,6 +104,33 @@ export default function PlansPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
+  // Check authentication on page load
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/auth");
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(response.data);
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        localStorage.removeItem("token");
+        router.push("/auth");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   const handleLogout = () => {
     localStorage.removeItem("token"); // Remove token from local storage
     setUser(null); // Reset user state
@@ -108,6 +139,33 @@ export default function PlansPage() {
 
   const toggleComplete = (id: number) => {
 
+  }
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f9fafb'
+        }}>
+          <div style={{
+            padding: '2rem',
+            background: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            Loading...
+          </div>
+        </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
