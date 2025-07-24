@@ -21,7 +21,8 @@ import {
   Filter,
   LogOut,
   Clock,
-  Building
+  Building,
+  User
 } from "lucide-react"
 import styles from "./doctors.module.css"
 import axios from "axios"
@@ -72,6 +73,8 @@ interface DoctorFormData {
 
 export default function DoctorsPage() {
   const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newDoctor, setNewDoctor] = useState<DoctorFormData>({
@@ -107,6 +110,25 @@ export default function DoctorsPage() {
   });
   const [error, setError] = useState("")
 
+  // Check authentication on page load
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        router.push("/admin/auth");
+        return;
+      }
+      setIsAuthenticated(true);
+      setAuthLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
   // const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)))
   // const statuses = Array.from(new Set(doctors.map(doctor => doctor.status)))
   // const locations = Array.from(new Set(doctors.map(doctor => doctor.location)))
@@ -118,10 +140,12 @@ export default function DoctorsPage() {
   }
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchDoctors = async () => {
       try {
         const response = await axios.get<ApiResponse>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/doctors?page=${currentPage}&limit=12`
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/doctors?page=${currentPage}&limit=12`
         )
 
         console.log("Fetched doctors:", response.data.doctors)
@@ -134,7 +158,34 @@ export default function DoctorsPage() {
     }
 
     fetchDoctors()
-  }, [currentPage])
+  }, [currentPage, isAuthenticated])
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f9fafb'
+        }}>
+          <div style={{
+            padding: '2rem',
+            background: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            Loading...
+          </div>
+        </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleAddDoctor = (e: React.FormEvent) => {
     e.preventDefault()
@@ -204,6 +255,10 @@ export default function DoctorsPage() {
             <Link href="/admin/doctors" className={`${styles.sidebarLink} ${styles.active}`}>
               <Stethoscope size={20} />
               Doctors
+            </Link>
+            <Link href="/admin/users" className={styles.sidebarLink}>
+              <User size={20} />
+              Users
             </Link>
             <Link href="/admin/appointments" className={styles.sidebarLink}>
               <Calendar size={20} />
@@ -326,6 +381,71 @@ export default function DoctorsPage() {
                 </div>
             ))}
           </div>
+
+          {pagination.totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                    onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={styles.paginationButton}
+                >
+                  Previous
+                </button>
+                <div className={styles.pageNumbers}>
+                  {(() => {
+                    const maxPageNumbers = 5
+                    const pageRange = Math.floor(maxPageNumbers / 2)
+                    const startPage = Math.max(1, currentPage - pageRange)
+                    const endPage = Math.min(pagination.totalPages, currentPage + pageRange)
+
+                    const pageNumbers = []
+
+                    // Always show page 1
+                    if (startPage > 1) {
+                      pageNumbers.push(1)
+                      if (startPage > 2) {
+                        pageNumbers.push("...")
+                      }
+                    }
+
+                    // Add pages around current page
+                    for (let i = startPage; i <= endPage; i++) {
+                      pageNumbers.push(i)
+                    }
+
+                    // Always show last page
+                    if (endPage < pagination.totalPages) {
+                      if (endPage < pagination.totalPages - 1) {
+                        pageNumbers.push("...")
+                      }
+                      pageNumbers.push(pagination.totalPages)
+                    }
+
+                    return pageNumbers.map((number, index) => (
+                        <span key={index}>
+                      {number === "..." ? (
+                          <span className={styles.ellipsis}>...</span>
+                      ) : (
+                          <button
+                              onClick={() => handlePageChange(number as number)}
+                              className={`${styles.pageNumber} ${currentPage === number ? styles.active : ''}`}
+                          >
+                            {number}
+                          </button>
+                      )}
+                    </span>
+                    ))
+                  })()}
+                </div>
+                <button
+                    onClick={() => handlePageChange(Math.min(currentPage + 1, pagination.totalPages))}
+                    disabled={currentPage === pagination.totalPages}
+                    className={styles.paginationButton}
+                >
+                  Next
+                </button>
+              </div>
+          )}
         </main>
 
         {isEditModalOpen && editingDoctor && (
