@@ -63,6 +63,13 @@ export default function EditProfilePage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordSuccess, setPasswordSuccess] = useState("")
 
   // Check authentication first
   useEffect(() => {
@@ -178,7 +185,11 @@ export default function EditProfilePage() {
   // Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    if (name in passwordData) {
+      setPasswordData({ ...passwordData, [name]: value })
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
   }
 
   // Handle form submission
@@ -239,6 +250,82 @@ export default function EditProfilePage() {
     } catch (error: any) {
       console.error("Error updating profile:", error)
       setError(error.message || "Failed to update profile")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle password change
+  const handlePasswordChange = async () => {
+    setPasswordError("")
+    setPasswordSuccess("")
+
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError("Please fill in all password fields.")
+      return
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("New passwords do not match.")
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters long.")
+      return
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      setPasswordError("New password must be different from current password.")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to change password")
+      }
+
+      const result = await response.json()
+      console.log("Password changed successfully:", result)
+
+      // Reset password form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      })
+
+      setPasswordSuccess("Password changed successfully! A confirmation email has been sent.")
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setPasswordSuccess("")
+      }, 5000)
+
+    } catch (error: any) {
+      console.error("Error changing password:", error)
+      setPasswordError(error.message || "Failed to change password")
     } finally {
       setIsLoading(false)
     }
@@ -401,19 +488,6 @@ export default function EditProfilePage() {
                             required
                         />
                       </div>
-                    </div>
-
-                    <div className={styles.formGroup}>
-                      <label>Email</label>
-                      <input
-                          id="email"
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          placeholder="Enter email address"
-                          disabled
-                      />
                     </div>
 
                     <div className={styles.formGroup}>
@@ -681,7 +755,77 @@ export default function EditProfilePage() {
             {activeTab === "security" && (
                 <div className={styles.formSection}>
                   <h2>Security Settings</h2>
-                  <p className={styles.comingSoon}>Security settings coming soon...</p>
+
+                  <div className={styles.formGroup}>
+                    <label>Email</label>
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Enter email address"
+                        disabled
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Current Password</label>
+                    <input
+                        type="password"
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handleChange}
+                        placeholder="Enter current password"
+                        required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>New Password</label>
+                    <input
+                        type="password"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handleChange}
+                        placeholder="Enter new password"
+                        minLength={6}
+                        required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Confirm New Password</label>
+                    <input
+                        type="password"
+                        name="confirmPassword"
+                        value={passwordData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm new password"
+                        minLength={6}
+                        required
+                    />
+                  </div>
+
+                  {passwordError && (
+                      <div className={styles.errorMessage}>
+                        {passwordError}
+                      </div>
+                  )}
+
+                  {passwordSuccess && (
+                      <div className={styles.successMessage}>
+                        {passwordSuccess}
+                      </div>
+                  )}
+
+                  <button
+                      type="button"
+                      className={styles.changePasswordButton}
+                      onClick={handlePasswordChange}
+                      disabled={isLoading}
+                  >
+                    {isLoading ? "Changing Password..." : "Change Password"}
+                  </button>
                 </div>
             )}
 
