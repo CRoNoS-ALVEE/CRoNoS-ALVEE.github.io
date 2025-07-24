@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Stethoscope,
   BarChart3,
@@ -20,7 +21,6 @@ import {
   LogOut
 } from "lucide-react"
 import styles from "./appointments.module.css"
-import router from "next/router"
 
 interface Appointment {
   id: number
@@ -71,25 +71,68 @@ const appointments: Appointment[] = [
 ]
 
 export default function AppointmentsPage() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedType, setSelectedType] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("")
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
+  // Check authentication on page load
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("adminToken")
+      if (!token) {
+        router.push("/admin/auth")
+        return
+      }
+      setIsAuthenticated(true)
+      setAuthLoading(false)
+    }
+
+    checkAuth()
+  }, [router])
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("adminToken")
-      router.push("/admin/auth")
-    }
+    localStorage.removeItem("adminToken")
+    router.push("/admin/auth")
   }
 
   const types = Array.from(new Set(appointments.map(appointment => appointment.type)))
   const statuses = Array.from(new Set(appointments.map(appointment => appointment.status)))
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f9fafb'
+        }}>
+          <div style={{
+            padding: '2rem',
+            background: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            Loading...
+          </div>
+        </div>
+    )
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null
+  }
 
   if (!isMounted) {
     return null
@@ -128,6 +171,10 @@ export default function AppointmentsPage() {
             <Link href="/admin/doctors" className={styles.sidebarLink}>
               <Stethoscope size={20} />
               Doctors
+            </Link>
+            <Link href="/admin/users" className={styles.sidebarLink}>
+              <User size={20} />
+              Users
             </Link>
             <Link href="/admin/appointments" className={`${styles.sidebarLink} ${styles.active}`}>
               <Calendar size={20} />
