@@ -383,6 +383,47 @@
   transform: scale(0.95);
 }
 
+.changePasswordButton {
+  background: #9333ea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.changePasswordButton:hover:not(:disabled) {
+  background: #7928ca;
+}
+
+.changePasswordButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+}
+
+.successMessage {
+  background: #d1fae5;
+  color: #059669;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  border: 1px solid #a7f3d0;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     display: none;
