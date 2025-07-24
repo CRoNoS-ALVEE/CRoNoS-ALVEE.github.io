@@ -403,41 +403,110 @@
 
 .modalHeader {
   display: flex;
-  gap: 2rem;
+  flex-direction: column;
+  align-items: center;
   padding: 2rem;
   border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+  position: relative;
 }
 
 .modalImage {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 1rem;
   object-fit: cover;
+  margin-bottom: 1rem;
 }
 
 .modalHeaderContent {
-  flex: 1;
+  width: 100%;
 }
 
 .modalHeaderContent h2 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.5rem;
+}
+
+.specialty {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.locationPhoneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  gap: 1rem;
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.modalBookButton {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #9333ea 0%, #7928ca 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.modalBookButton:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.modalCloseButton {
+  padding: 0.75rem 1.5rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.modalCloseButton:hover {
+  background: #e5e7eb;
+  color: #4b5563;
 }
 
 .modalBody {
   padding: 2rem;
 }
 
-.modalActions {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid #e5e7eb;
-}
-
 .infoSection {
   margin-bottom: 2rem;
-  text-align: center;
+  text-align: left;
 }
 
 .infoSection h3 {
@@ -447,7 +516,7 @@
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.75rem;
 }
 
@@ -494,25 +563,6 @@
   align-items: center;
   gap: 0.5rem;
   color: #4b5563;
-}
-
-.modalBookButton {
-  width: 100%;
-  padding: 1rem;
-  text-align: center;
-  background: linear-gradient(135deg, #9333ea 0%, #7928ca 100%);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.modalBookButton:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
 }
 
 .noResults {
