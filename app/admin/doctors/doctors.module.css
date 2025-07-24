@@ -189,6 +189,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 .doctorCard {
@@ -197,6 +198,9 @@
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .doctorCard:hover {
@@ -573,7 +577,113 @@
     grid-template-columns: 1fr;
   }
 
+  .pagination {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .pageNumbers {
+    gap: 0.25rem;
+  }
+
+  .pageNumber {
+    width: 36px;
+    height: 36px;
+    font-size: 0.75rem;
+  }
+
+  .paginationButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    min-width: 70px;
+  }
+
+  .ellipsis {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.75rem;
+  }
+
   .formRow {
     grid-template-columns: 1fr;
   }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pageNumber {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  min-width: 40px;
+}
+
+.pageNumber:hover {
+  border-color: #9333ea;
+  color: #9333ea;
+}
+
+.pageNumber.active {
+  background: #9333ea;
+  color: white;
+  border-color: #9333ea;
+  font-weight: 600;
+}
+
+.paginationButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  min-width: 80px;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: #9333ea;
+  color: #9333ea;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ellipsis {
+  padding: 0.5rem;
+  color: #9ca3af;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
 }
