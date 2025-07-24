@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useCallback, useEffect} from "react"
+import { useState, useCallback, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   FileText,
@@ -30,38 +31,58 @@ const tabs = [
 ]
 
 export default function EditProfilePage() {
+  const router = useRouter()
   const [profileImage, setProfileImage] = useState("https://img.freepik.com/premium-vector/male-face-avatar-icon-set-flat-design-social-media-profiles_1281173-3806.jpg?w=740")
   const [activeTab, setActiveTab] = useState<TabId>("personal")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        address: "",
-        zipCode: "",
-        city: "",
-        state: "",
-        country: "",
-        bio: "",
-        gender: "",
-        age: "",
-        profilePic: "",
-        blood_group: "",
-        weight: "",
-        height: "",
-        allergies: "",
-        medical_conditions: "",
-        medications: "",
-        surgeries: "",
-        family_medical_history: "",
-        emergency_contact: ""
-})
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    zipCode: "",
+    city: "",
+    state: "",
+    country: "",
+    bio: "",
+    gender: "",
+    age: "",
+    profilePic: "",
+    blood_group: "",
+    weight: "",
+    height: "",
+    allergies: "",
+    medical_conditions: "",
+    medications: "",
+    surgeries: "",
+    family_medical_history: "",
+    emergency_contact: ""
+  })
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Check authentication first
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        router.push("/auth")
+        return
+      }
+      setIsAuthenticated(true)
+      setAuthLoading(false)
+    }
+
+    checkAuth()
+  }, [router])
+
   // Fetch initial user data
   useEffect(() => {
+    if (!isAuthenticated) return
+
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("token")
@@ -116,7 +137,7 @@ export default function EditProfilePage() {
     }
 
     fetchProfileData()
-  }, [])
+  }, [isAuthenticated])
 
   // Handle Image Upload to Cloudinary
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,7 +233,9 @@ export default function EditProfilePage() {
 
       const updatedUser = await response.json()
       console.log("Profile updated successfully:", updatedUser)
-      alert("Profile updated successfully!")
+
+      // Redirect to profile page with success message
+      router.push("/profile?updated=true")
     } catch (error: any) {
       console.error("Error updating profile:", error)
       setError(error.message || "Failed to update profile")
@@ -224,6 +247,33 @@ export default function EditProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem("token")
     window.location.href = "/auth"
+  }
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f9fafb'
+        }}>
+          <div style={{
+            padding: '2rem',
+            background: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            Loading...
+          </div>
+        </div>
+    )
+  }
+
+  // Don't render the page if not authenticated
+  if (!isAuthenticated) {
+    return null
   }
 
   return (
