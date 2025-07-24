@@ -82,6 +82,14 @@ export default function DoctorsPage() {
   })
   const [currentPage, setCurrentPage] = useState(1)
 
+  // Move state declarations before useEffect hooks that depend on them
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedSpecialty, setSelectedSpecialty] = useState("")
+  const [selectedLocation, setSelectedLocation] = useState("")
+  const [selectedAvailability, setSelectedAvailability] = useState("")
+  const [isFiltering, setIsFiltering] = useState(false)
+
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token")
@@ -110,19 +118,49 @@ export default function DoctorsPage() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
+        setIsFiltering(true)
+
+        // Build query parameters for server-side filtering
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '12'
+        })
+
+        if (searchTerm.trim()) {
+          params.append('search', searchTerm.trim())
+        }
+        if (selectedSpecialty) {
+          params.append('specialty', selectedSpecialty)
+        }
+        if (selectedLocation) {
+          params.append('location', selectedLocation)
+        }
+        if (selectedAvailability) {
+          params.append('availability', selectedAvailability)
+        }
+
         const response = await axios.get<ApiResponse>(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/doctors?page=${currentPage}&limit=12`
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/doctors?${params.toString()}`
         )
         setDoctors(response.data.doctors)
         setPagination(response.data.pagination)
       } catch (err) {
         console.error("Failed to fetch doctors:", err)
         setError("Failed to fetch doctors data.")
+      } finally {
+        setIsFiltering(false)
       }
     }
 
     fetchDoctors()
-  }, [currentPage])
+  }, [currentPage, searchTerm, selectedSpecialty, selectedLocation, selectedAvailability])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [searchTerm, selectedSpecialty, selectedLocation, selectedAvailability])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -136,30 +174,12 @@ export default function DoctorsPage() {
     }
   }
 
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedSpecialty, setSelectedSpecialty] = useState("")
-  const [selectedLocation, setSelectedLocation] = useState("")
-  const [selectedAvailability, setSelectedAvailability] = useState("")
-
   const specialties = Array.from(new Set(doctors.map(doctor => doctor.speciality)))
   const locations = Array.from(new Set(doctors.map(doctor => doctor.address)))
   const availabilities = Array.from(new Set(doctors.map(doctor => doctor.visiting_hours)))
 
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter(doctor => {
-      const matchesSearch =
-          doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doctor.speciality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doctor.hospital_name.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesSpecialty = !selectedSpecialty || doctor.speciality === selectedSpecialty
-      const matchesLocation = !selectedLocation || doctor.address === selectedLocation
-      const matchesAvailability = !selectedAvailability || doctor.visiting_hours === selectedAvailability
-
-      return matchesSearch && matchesSpecialty && matchesLocation && matchesAvailability
-    })
-  }, [doctors, searchTerm, selectedSpecialty, selectedLocation, selectedAvailability])
+  // Since filtering is now done server-side, we can use doctors directly
+  const filteredDoctors = doctors
 
   // Pagination logic for limited page numbers
   const maxPageNumbers = 9 // Maximum page numbers to display before ellipses
@@ -264,6 +284,14 @@ export default function DoctorsPage() {
             </section>
 
             <div className={styles.doctorsGrid}>
+              {isFiltering && (
+                  <div className={styles.loadingOverlay}>
+                    <div className={styles.loadingSpinner}>
+                      <div className={styles.spinner}></div>
+                      <p>Searching doctors...</p>
+                    </div>
+                  </div>
+              )}
               {filteredDoctors.length > 0 ? (
                   filteredDoctors.map(doctor => (
                       <div key={doctor._id} className={styles.doctorCard}>
@@ -304,9 +332,11 @@ export default function DoctorsPage() {
                       </div>
                   ))
               ) : (
-                  <div className={styles.noResults}>
-                    No doctors found matching your criteria
-                  </div>
+                  !isFiltering && (
+                      <div className={styles.noResults}>
+                        No doctors found matching your criteria. Try adjusting your search filters.
+                      </div>
+                  )
               )}
             </div>
 
@@ -354,6 +384,7 @@ export default function DoctorsPage() {
                 <button
                     className={styles.closeButton}
                     onClick={() => setSelectedDoctor(null)}
+                    disabled={isFiltering}
                 >
                   <X size={24} />
                 </button>
@@ -443,3 +474,4 @@ export default function DoctorsPage() {
       </>
   )
 }
+
