@@ -837,15 +837,6 @@ export default function EditProfilePage() {
                         {passwordSuccess}
                       </div>
                   )}
-
-                  <button
-                      type="button"
-                      className={styles.changePasswordButton}
-                      onClick={handlePasswordChange}
-                      disabled={isLoading}
-                  >
-                    {isLoading ? "Changing Password..." : "Change Password"}
-                  </button>
                 </div>
             )}
 
@@ -882,6 +873,23 @@ export default function EditProfilePage() {
                   <Link href="/profile" className={`${styles.button} ${styles.secondaryButton}`} passHref>
                     Cancel
                   </Link>
+              )}
+              {activeTab === "security" && (
+                  <button
+                      type="button"
+                      className={`${styles.button} ${styles.primaryButton}`}
+                      onClick={handlePasswordChange}
+                      disabled={isLoading}
+                  >
+                    {isLoading ? (
+                        "Changing..."
+                    ) : (
+                        <>
+                          <Save size={16} />
+                          Change Password
+                        </>
+                    )}
+                  </button>
               )}
             </div>
           </form>
