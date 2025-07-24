@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import {type ReactNode, useState} from "react"
+import {type ReactNode, useState, useEffect} from "react"
 import { useRouter } from 'next/navigation';
+import axios from "axios";
 import {
   LayoutDashboard,
   FileText,
@@ -25,6 +26,7 @@ interface NavItemProps {
   onClick?: () => void;
 }
 interface User {
+  _id?: string;
   profile_pic?: string;
   name?: string;
 }
@@ -77,8 +79,37 @@ export default function ReportsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [selectedType, setSelectedType] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+
+  // Check authentication on page load
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/auth");
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(response.data);
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        localStorage.removeItem("token");
+        router.push("/auth");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // Remove token from local storage
@@ -95,122 +126,149 @@ export default function ReportsPage() {
   const types = Array.from(new Set(reports.map(report => report.type)));
   const statuses = Array.from(new Set(reports.map(report => report.status)));
 
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f9fafb'
+        }}>
+          <div style={{
+            padding: '2rem',
+            background: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            Loading...
+          </div>
+        </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className={styles.container}>
-      <button className={styles.menuButton} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-        <Menu size={24} />
-      </button>
+      <div className={styles.container}>
+        <button className={styles.menuButton} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          <Menu size={24} />
+        </button>
 
-      <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ''}`}>
-        <Link href="/" className={styles.mainLogo}>
-          <div className={styles.logoIcon}>
-            <Stethoscope size={24} />
-          </div>
-          <span>SymptoSeek</span>
-        </Link>
-
-        <nav className={styles.navigation}>
-          <Link href="/dashboard" className={styles.navItem}>
-            <LayoutDashboard size={20} />
-            Dashboard
-          </Link>
-          <Link href="/reports" className={`${styles.navItem} ${styles.active}`}>
-            <FileText size={20} />
-            Reports
-          </Link>
-          <Link href="/plans" className={styles.navItem}>
-            <Calendar size={20} />
-            Plans
-          </Link>
-          <Link href="/reminders" className={styles.navItem}>
-            <Bell size={20} />
-            Reminders
-          </Link>
-          <Link href="/profile" className={styles.navItem}>
-            <User size={20} />
-            Profile
-          </Link>
-        </nav>
-
-        <div className={styles.bottomNav}>
-          <Link href="/settings" className={styles.navItem}>
-            <Settings size={20} />
-            Settings
-          </Link>
-          <button onClick={handleLogout} className={styles.navItem}>
-            <LogOut size={20} />
-            Log out
-          </button>
-        </div>
-      </aside>
-
-      <main className={styles.main}>
-        <div className={styles.header}>
-          <h1>Medical Reports</h1>
-          <div className={styles.filters}>
-            <div className={styles.filterGroup}>
-              <label>Type</label>
-              <select 
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className={styles.select}
-              >
-                <option value="">All Types</option>
-                {types.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+        <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ''}`}>
+          <Link href="/" className={styles.mainLogo}>
+            <div className={styles.logoIcon}>
+              <Stethoscope size={24} />
             </div>
+            <span>SymptoSeek</span>
+          </Link>
 
-            <div className={styles.filterGroup}>
-              <label>Status</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className={styles.select}
-              >
-                <option value="">All Statuses</option>
-                {statuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
+          <nav className={styles.navigation}>
+            <Link href="/dashboard" className={styles.navItem}>
+              <LayoutDashboard size={20} />
+              Dashboard
+            </Link>
+            <Link href="/reports" className={`${styles.navItem} ${styles.active}`}>
+              <FileText size={20} />
+              Reports
+            </Link>
+            <Link href="/plans" className={styles.navItem}>
+              <Calendar size={20} />
+              Plans
+            </Link>
+            <Link href="/reminders" className={styles.navItem}>
+              <Bell size={20} />
+              Reminders
+            </Link>
+            <Link href="/profile" className={styles.navItem}>
+              <User size={20} />
+              Profile
+            </Link>
+          </nav>
+
+          <div className={styles.bottomNav}>
+            <Link href="/settings" className={styles.navItem}>
+              <Settings size={20} />
+              Settings
+            </Link>
+            <button onClick={handleLogout} className={styles.navItem}>
+              <LogOut size={20} />
+              Log out
+            </button>
+          </div>
+        </aside>
+
+        <main className={styles.main}>
+          <div className={styles.header}>
+            <h1>Medical Reports</h1>
+            <div className={styles.filters}>
+              <div className={styles.filterGroup}>
+                <label>Type</label>
+                <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className={styles.select}
+                >
+                  <option value="">All Types</option>
+                  {types.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.filterGroup}>
+                <label>Status</label>
+                <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className={styles.select}
+                >
+                  <option value="">All Statuses</option>
+                  {statuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={styles.reports}>
-          {filteredReports.map((report) => (
-            <div key={report.id} className={styles.reportCard}>
-              <div className={styles.reportHeader}>
-                <h3>{report.title}</h3>
-                <span className={`${styles.status} ${styles[report.status]}`}>
+          <div className={styles.reports}>
+            {filteredReports.map((report) => (
+                <div key={report.id} className={styles.reportCard}>
+                  <div className={styles.reportHeader}>
+                    <h3>{report.title}</h3>
+                    <span className={`${styles.status} ${styles[report.status]}`}>
                   {report.status}
                 </span>
-              </div>
-              
-              <div className={styles.reportDetails}>
-                <div className={styles.detail}>
-                  <FileText size={16} />
-                  <span>Type: {report.type}</span>
-                </div>
-                <div className={styles.detail}>
-                  <Calendar size={16} />
-                  <span>Date: {new Date(report.date).toLocaleDateString()}</span>
-                </div>
-                <div className={styles.detail}>
-                  <User size={16} />
-                  <span>Doctor: {report.doctor}</span>
-                </div>
-              </div>
+                  </div>
 
-              <button className={styles.downloadButton}>
-                <Download size={16} />
-                Download Report
-              </button>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
+                  <div className={styles.reportDetails}>
+                    <div className={styles.detail}>
+                      <FileText size={16} />
+                      <span>Type: {report.type}</span>
+                    </div>
+                    <div className={styles.detail}>
+                      <Calendar size={16} />
+                      <span>Date: {new Date(report.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className={styles.detail}>
+                      <User size={16} />
+                      <span>Doctor: {report.doctor}</span>
+                    </div>
+                  </div>
+
+                  <button className={styles.downloadButton}>
+                    <Download size={16} />
+                    Download Report
+                  </button>
+                </div>
+            ))}
+          </div>
+        </main>
+      </div>
   )
 }
