@@ -293,26 +293,6 @@
   background: #e9d5ff;
 }
 
-.confirmButton {
-  background: #d1fae5;
-  color: #059669;
-  border: none;
-}
-
-.confirmButton:hover {
-  background: #a7f3d0;
-}
-
-.pending {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.confirmed {
-  background: #d1fae5;
-  color: #059669;
-}
-
 .cancelButton {
   background: #fee2e2;
   color: #dc2626;
